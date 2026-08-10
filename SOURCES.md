@@ -53,7 +53,7 @@
 - `breakfast.jpg` — категория «Завтраки», источник: `https://api.patrickmary.ru/api/file/Categories/76/c937a05b-fb66-11eb-813e-00155d02df13_0000000001.jpg`;
 - `salads.jpg` — категория «Салаты, закуски», источник: `https://api.patrickmary.ru/api/file/Categories/77/c51072c1-fb3f-11eb-813e-00155d02df13_0000000002.jpg`;
 - `cakes.jpg` — категория «Торты», источник: `https://api.patrickmary.ru/api/file/Categories/80/c51072c4-fb3f-11eb-813e-00155d02df13_0000000005.jpg`;
-- `bakery.jpg` — официальная категория меню, источник: `https://api.patrickmary.ru/api/file/Categories/84/c51072c9-fb3f-11eb-813e-00155d02df13_0000000010.jpg`.
+- `bakery.jpg` — категория «Выпечка», источник: `https://api.patrickmary.ru/api/file/Categories/81/c51072c6-fb3f-11eb-813e-00155d02df13_0000000007.jpg`.
 
 Снимки в `public/assets/case/` получены из работающей локальной production-сборки этого прототипа и не являются внешними материалами.
 
