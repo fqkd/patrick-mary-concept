@@ -250,7 +250,7 @@ function LocationScreen({ mode, loading, onChoose }: { mode: ServiceMode | null;
   const pickup = mode !== 'delivery'
   const locations = pickup
     ? ['ул. Красная, 155', 'ул. Кубанская набережная, 35', 'ул. 40-летия Победы, 117']
-    : ['ул. Красная, 64', 'ул. Зиповская, 8', 'ул. Ставропольская, 129']
+    : ['Демо-адрес · ул. Красная, 64', 'Демо-адрес · ул. Зиповская, 8', 'Демо-адрес · ул. Ставропольская, 129']
   return (
     <div className="screen paper-screen">
       <Header title={pickup ? 'Выберите кулинарию' : 'Куда доставить?'} back="/mode" />
@@ -275,16 +275,22 @@ function LocationScreen({ mode, loading, onChoose }: { mode: ServiceMode | null;
 
 function CatalogScreen({ state, onAdd }: { state: DemoState; onAdd: (product: Product) => void }) {
   const [query, setQuery] = useState('')
-  const shown = products.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()) || product.category.toLowerCase().includes(query.toLowerCase()))
+  const [category, setCategory] = useState('Всё')
+  const categories = ['Всё', 'Завтраки', 'Готовая еда', 'Выпечка', 'Торты']
+  const categoryMatches = (product: Product) => category === 'Всё'
+    || product.category === category
+    || (category === 'Готовая еда' && product.category === 'Салаты, закуски')
+  const shown = products.filter((product) => categoryMatches(product)
+    && (product.name.toLowerCase().includes(query.toLowerCase()) || product.category.toLowerCase().includes(query.toLowerCase())))
   return (
     <div className="screen with-nav catalog-screen">
       <Header title="Готовая еда" back="/" action={<button className="bag-button" aria-label="Корзина" onClick={() => navigate('/cart')}><ShoppingBag size={20} />{state.cart.length > 0 && <b>{state.cart.reduce((sum, item) => sum + item.quantity, 0)}</b>}</button>} />
       <button className="catalog-context" onClick={() => navigate('/mode')}><span>{state.mode === 'delivery' ? 'Доставка' : 'Самовывоз'} · {state.location || 'точка не выбрана'}</span><ChevronRight size={16} /></button>
       <div className="catalog-body">
         <label className="real-search"><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти в демонстрационном меню" /></label>
-        <div className="category-chips"><button className="active">Всё</button><button>Завтраки</button><button>Готовая еда</button><button>Выпечка</button></div>
+        <div className="category-chips">{categories.map((item) => <button key={item} className={category === item ? 'active' : ''} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
         <div className="demo-label"><Sparkles size={15} /> Демонстрационные состав и цены</div>
-        {shown.length === 0 ? <div className="empty-state"><Search size={36} /><h2>Ничего не нашли</h2><p>Попробуйте название категории или вернитесь ко всему меню.</p><button className="primary" onClick={() => setQuery('')}>Показать всё</button></div> : (
+        {shown.length === 0 ? <div className="empty-state"><Search size={36} /><h2>Ничего не нашли</h2><p>Попробуйте название категории или вернитесь ко всему меню.</p><button className="primary" onClick={() => { setQuery(''); setCategory('Всё') }}>Показать всё</button></div> : (
           <div className="product-grid">
             {shown.map((product) => <ProductCard key={product.id} product={product} onAdd={() => onAdd(product)} />)}
           </div>
@@ -425,7 +431,8 @@ function LoginScreen() {
 }
 
 function OrdersScreen() {
+  const [tab, setTab] = useState<'history' | 'current'>('history')
   return (
-    <div className="screen with-nav paper-screen"><Header title="Заказы" /><div className="screen-body"><div className="tabs"><button className="active">История</button><button>Текущие</button></div><button className="history-card" onClick={() => navigate('/repeat')}><span className="history-date">28 июля</span><strong>Самовывоз · Красная, 155</strong><small>Сырники, выпечка и ещё 1 позиция</small><span className="history-action"><RefreshCw size={17} /> Проверить и повторить</span></button><div className="empty-inline"><Clock3 /><span><strong>Текущих заказов нет</strong><small>После демо-подтверждения здесь мог бы появиться статус.</small></span></div></div><BottomNav active="orders" /></div>
+    <div className="screen with-nav paper-screen"><Header title="Заказы" /><div className="screen-body"><div className="tabs"><button className={tab === 'history' ? 'active' : ''} aria-pressed={tab === 'history'} onClick={() => setTab('history')}>История</button><button className={tab === 'current' ? 'active' : ''} aria-pressed={tab === 'current'} onClick={() => setTab('current')}>Текущие</button></div>{tab === 'history' ? <button className="history-card" onClick={() => navigate('/repeat')}><span className="history-date">28 июля</span><strong>Самовывоз · Красная, 155</strong><small>Сырники, выпечка и ещё 1 позиция</small><span className="history-action"><RefreshCw size={17} /> Проверить и повторить</span></button> : <div className="empty-inline"><Clock3 /><span><strong>Текущих заказов нет</strong><small>После демо-подтверждения здесь мог бы появиться статус.</small></span></div>}</div><BottomNav active="orders" /></div>
   )
 }
