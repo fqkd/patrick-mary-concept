@@ -1,0 +1,33 @@
+{
+  "name": "patrick-mary-concept",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "test": "node --test --experimental-strip-types src/lib/*.test.ts",
+    "preview": "vite preview",
+    "check": "npm run lint && npm run test && npm run build",
+    "qa": "node scripts/qa.mjs",
+    "capture": "node scripts/capture.mjs"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "^5.2.6",
+    "@fontsource/prata": "^5.2.6",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "oxlint": "^1.15.6",
+    "playwright": "^1.59.1",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5"
+  }
+}
