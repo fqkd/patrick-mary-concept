@@ -38,11 +38,11 @@ test('payment recovery never clears cart lines', () => {
 
 test('confirmed order keeps the exact checkout snapshot', () => {
   const basket: CartLine[] = [
-    { id: 'syrniki', name: 'Сырники классические', price: 390, quantity: 1 },
-    { id: 'bakery', name: 'Свежая выпечка', price: 190, quantity: 2 },
+    { id: 'syrniki', name: 'Сырник творожный', price: 150, quantity: 1 },
+    { id: 'bakery', name: 'Киш из песочного теста с рыбой', price: 1132, quantity: 2 },
   ]
   const order = createConfirmedOrder('PM-024', 'delivery', 'ул. Красная, 64', 'Сегодня · 19:10–19:25', basket)
-  assert.equal(order.amount, 770)
+  assert.equal(order.amount, 2414)
   assert.equal(order.lines[1].quantity, 2)
   assert.equal(order.location, 'ул. Красная, 64')
   assert.equal(order.status, 'Принят')
@@ -50,15 +50,15 @@ test('confirmed order keeps the exact checkout snapshot', () => {
 
 test('repeat preview and resulting cart preserve the same quantities', () => {
   const previous: CartLine[] = [
-    { id: 'syrniki', name: 'Сырники классические', price: 350, quantity: 1 },
-    { id: 'bakery', name: 'Свежая выпечка', price: 190, quantity: 2 },
+    { id: 'syrniki', name: 'Сырник творожный', price: 140, quantity: 1 },
+    { id: 'bakery', name: 'Киш из песочного теста с рыбой', price: 1090, quantity: 2 },
   ]
-  const available = reconcileRepeat(previous, { syrniki: 390, bakery: 190 }).filter((line) => line.available)
+  const available = reconcileRepeat(previous, { syrniki: 150, bakery: 1132 }).filter((line) => line.available)
   assert.deepEqual(available.map(({ id, quantity }) => ({ id, quantity })), [
     { id: 'syrniki', quantity: 1 },
     { id: 'bakery', quantity: 2 },
   ])
-  assert.equal(total(available), 770)
+  assert.equal(total(available), 2414)
 })
 
 test('cake request contains only choices made by the user', () => {

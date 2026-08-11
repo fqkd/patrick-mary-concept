@@ -132,8 +132,10 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 .catalog-body { padding: 16px 14px 20px; }
 .real-search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: 0; font-size: 12px; }
 .category-chips { display: flex; gap: 7px; overflow-x: auto; padding: 12px 0 10px; scrollbar-width: none; }
-.category-chips button { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 99px; background: #fff; padding: 9px 13px; font-size: 10px; cursor: pointer; }
+.category-chips button { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 99px; background: #fff; padding: 9px 13px; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; cursor: pointer; }
+.category-chips button small { min-width: 17px; height: 17px; padding: 0 5px; border-radius: 99px; display: inline-grid; place-items: center; color: var(--muted); background: #f3ece6; font-size: 8px; }
 .category-chips button.active { background: var(--brown); border-color: var(--brown); color: #fff; }
+.category-chips button.active small { color: var(--brown); background: #fff; }
 .demo-label { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; color: #9a8177; font-size: 9px; }
 .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
 .product-card { min-width: 0; border-radius: 20px; background: #fff; overflow: hidden; border: 1px solid #eee4dd; box-shadow: 0 6px 20px rgba(62,38,29,.05); }
@@ -142,9 +144,9 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 .product-photo:hover img { transform: scale(1.035); }
 .product-photo span { position: absolute; left: 9px; top: 9px; border-radius: 20px; background: rgba(255,255,255,.88); padding: 5px 8px; font-size: 8px; font-weight: 800; }
 .product-copy { width: 100%; min-height: 70px; padding: 11px 11px 5px; border: 0; background: transparent; display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer; }
-.product-copy strong { font-size: 12px; line-height: 1.3; }.product-copy small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+.product-copy strong { font-size: 12px; line-height: 1.3; }.product-copy small { color: var(--muted); font-size: 9px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .product-bottom { padding: 3px 9px 10px 11px; display: flex; align-items: center; justify-content: space-between; }
-.product-bottom b { font-size: 13px; }.product-bottom button { width: 36px; height: 36px; border: 0; border-radius: 13px; display: grid; place-items: center; background: var(--orange); color: #fff; cursor: pointer; }
+.product-bottom > span { display: flex; flex-direction: column; gap: 2px; }.product-bottom b { font-size: 13px; }.product-bottom small { color: var(--muted); font-size: 8px; }.product-bottom button { width: 36px; height: 36px; border: 0; border-radius: 13px; display: grid; place-items: center; background: var(--orange); color: #fff; cursor: pointer; }
 .floating-cart { position: sticky; z-index: 24; left: 16px; right: 16px; bottom: 12px; width: calc(100% - 32px); min-height: 50px; margin: 0 16px 12px; border: 0; border-radius: 17px; padding: 0 16px; display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; background: var(--brown); color: #fff; box-shadow: 0 12px 26px rgba(65,34,25,.25); cursor: pointer; }
 .floating-cart span { display: flex; align-items: center; gap: 8px; font-size: 11px; }
 .floating-cart strong { font-size: 12px; }
@@ -160,7 +162,7 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 .product-detail { flex: 1 0 auto; padding: 24px 20px; }
 .product-detail p { color: var(--muted); font-size: 12px; line-height: 1.6; }
 .detail-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 20px; }
-.detail-facts span { padding: 14px; border-radius: 16px; background: #f5efe9; display: flex; flex-direction: column; gap: 3px; }
+.detail-facts span, .detail-facts a { padding: 14px; border-radius: 16px; background: #f5efe9; display: flex; flex-direction: column; gap: 3px; color: inherit; text-decoration: none; }
 .detail-facts strong { font-size: 11px; }.detail-facts small { color: var(--muted); font-size: 9px; }
 .sticky-action { position: sticky; z-index: 25; bottom: 0; left: 0; right: 0; margin-top: auto; padding: 13px 18px calc(15px + env(safe-area-inset-bottom)); display: flex; flex: 0 0 auto; align-items: center; gap: 16px; background: rgba(255,253,249,.96); border-top: 1px solid var(--line); }
 .sticky-action > strong { flex: 0 0 auto; font-size: 18px; }.sticky-action .primary { flex: 1; }

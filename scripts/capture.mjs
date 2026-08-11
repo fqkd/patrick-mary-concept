@@ -19,6 +19,14 @@ const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
 for (const [name, route] of Object.entries(states)) {
   await page.goto(new URL(route, base).toString(), { waitUntil: 'networkidle' })
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.waitForFunction(() => [...document.images]
+    .filter((image) => {
+      const box = image.getBoundingClientRect()
+      return box.top < window.innerHeight && box.bottom > 0
+    })
+    .every((image) => image.complete && image.naturalWidth > 0))
+  await page.locator('.screen').evaluate((screen) => { screen.scrollTop = 0 })
   await page.screenshot({ path: new URL(`${name}.jpg`, output).pathname, type: 'jpeg', quality: 88 })
 }
 await browser.close()

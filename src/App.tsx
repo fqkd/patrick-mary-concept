@@ -35,6 +35,7 @@ import {
   type ConfirmedOrder,
   type ServiceMode,
 } from './lib/order'
+import { officialCategories, products, type Product } from './data/menu'
 
 type DemoState = {
   mode: ServiceMode | null
@@ -45,27 +46,11 @@ type DemoState = {
   cakeRequest: CakeRequest | null
 }
 
-type Product = {
-  id: string
-  name: string
-  note: string
-  category: string
-  price: number
-  image: string
-}
-
-const products: Product[] = [
-  { id: 'syrniki', name: 'Сырники классические', note: 'Творожные, с ванильной ноткой', category: 'Завтраки', price: 390, image: 'https://api.patrickmary.ru/api/file/Nomenclature729x475/10754/6f116cfa-e348-11db-a154-0011671aa2d0_99-0005168_729x475.jpg' },
-  { id: 'salad', name: 'Салат с курицей и овощами', note: 'Зелень, томаты и хрустящие сухарики', category: 'Салаты, закуски', price: 340, image: 'assets/food/salads.jpg' },
-  { id: 'bakery', name: 'Пирог с орехами', note: 'Свежая выпечка к чаю', category: 'Выпечка', price: 190, image: 'assets/food/bakery.jpg' },
-  { id: 'cake', name: 'Ягодный торт на заказ', note: 'Размер и оформление — по заявке', category: 'Торты на заказ', price: 0, image: 'assets/food/cakes.jpg' },
-]
-
 const emptyState: DemoState = { mode: null, location: '', cart: [], slot: '', orders: [], cakeRequest: null }
 
 const demoCart: CartLine[] = [
-  { id: 'syrniki', name: 'Сырники классические', price: 390, quantity: 1 },
-  { id: 'bakery', name: 'Пирог с орехами', price: 190, quantity: 2 },
+  { id: 'syrniki', name: 'Сырник творожный', price: 150, quantity: 1 },
+  { id: 'bakery', name: 'Киш из песочного теста с рыбой', price: 1132, quantity: 2 },
 ]
 
 const routeFromHash = () => {
@@ -87,7 +72,10 @@ const formatContext = (state: Pick<DemoState, 'mode' | 'location'>) => {
 const normalizeState = (saved: Partial<DemoState>): DemoState => ({
   ...emptyState,
   ...saved,
-  cart: saved.cart ?? [],
+  cart: (saved.cart ?? []).flatMap((line) => {
+    const product = products.find((item) => item.id === line.id)
+    return product ? [{ ...line, name: product.name, price: product.price }] : []
+  }),
   orders: saved.orders ?? [],
   cakeRequest: saved.cakeRequest ?? null,
 })
@@ -269,7 +257,7 @@ function HomeScreen({ state, onMode }: { state: DemoState; onMode: (mode: Servic
       <section className="section-block">
         <div className="section-title"><div><span className="eyebrow">В прошлый раз</span><h2>Повторить к ужину</h2></div><button onClick={() => navigate('/repeat')}>Проверить</button></div>
         <button className="repeat-card" onClick={() => navigate('/repeat')}>
-          <div className="repeat-images"><img src={products[0].image} alt="Сырники классические" /><img src="assets/food/bakery.jpg" alt="Пирог с орехами" /></div>
+          <div className="repeat-images"><img src={products.find((product) => product.id === 'syrniki')?.image} alt="Сырник творожный" /><img src={products.find((product) => product.id === 'bakery')?.image} alt="Киш из песочного теста с рыбой" /></div>
           <div><strong>2 позиции</strong><span>Проверим цену и наличие</span></div><ChevronRight size={19} />
         </button>
       </section>
@@ -331,19 +319,20 @@ function LocationScreen({ mode, loading, onChoose }: { mode: ServiceMode | null;
 function CatalogScreen({ state, onAdd }: { state: DemoState; onAdd: (product: Product) => void }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Всё')
-  const categories = ['Всё', 'Завтраки', 'Готовая еда', 'Выпечка', 'Торты на заказ']
-  const categoryMatches = (product: Product) => category === 'Всё'
-    || product.category === category
-    || (category === 'Готовая еда' && product.category === 'Салаты, закуски')
-  const shown = products.filter((product) => categoryMatches(product)
-    && (product.name.toLowerCase().includes(query.toLowerCase()) || product.category.toLowerCase().includes(query.toLowerCase())))
+  const categories = ['Всё', ...officialCategories]
+  const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU')
+  const shown = products.filter((product) => (category === 'Всё' || product.category === category)
+    && (!normalizedQuery
+      || product.name.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
+      || product.category.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
+      || product.description.toLocaleLowerCase('ru-RU').includes(normalizedQuery)))
   return (
     <div className="screen with-nav catalog-screen">
       <Header title="Готовая еда" back="/" action={<button className="bag-button" aria-label="Корзина" onClick={() => navigate('/cart')}><ShoppingBag size={20} />{state.cart.length > 0 && <b>{state.cart.reduce((sum, item) => sum + item.quantity, 0)}</b>}</button>} />
       <button className="catalog-context" onClick={() => navigate('/mode')}><span>{state.mode === 'delivery' ? 'Доставка' : 'Самовывоз'} · {state.location || 'точка не выбрана'}</span><ChevronRight size={16} /></button>
       <div className="catalog-body">
         <label className="real-search"><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти в меню" aria-label="Поиск по меню" /></label>
-        <div className="category-chips">{categories.map((item) => <button key={item} className={category === item ? 'active' : ''} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
+        <div className="category-chips" aria-label="Категории меню">{categories.map((item) => <button key={item} className={category === item ? 'active' : ''} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}{item !== 'Всё' && <small>{products.filter((product) => product.category === item).length}</small>}</button>)}</div>
         {shown.length === 0 ? <div className="empty-state"><Search size={36} /><h2>Ничего не нашли</h2><p>Попробуйте название категории или вернитесь ко всему меню.</p><button className="primary" onClick={() => { setQuery(''); setCategory('Всё') }}>Показать всё</button></div> : (
           <div className="product-grid">
             {shown.map((product) => <ProductCard key={product.id} product={product} onAdd={() => onAdd(product)} />)}
@@ -356,13 +345,12 @@ function CatalogScreen({ state, onAdd }: { state: DemoState; onAdd: (product: Pr
 }
 
 function ProductCard({ product, onAdd }: { product: Product; onAdd: () => void }) {
-  const isCake = product.id === 'cake'
-  const open = () => navigate(isCake ? '/cake' : `/product/${product.id}`)
+  const open = () => navigate(`/product/${product.id}`)
   return (
     <article className="product-card">
-      <button className="product-photo" onClick={open}><img src={product.image} alt={product.name} /><span>{product.category}</span></button>
-      <button className="product-copy" onClick={open}><strong>{product.name}</strong><small>{product.note}</small></button>
-      <div className="product-bottom"><b>{isCake ? 'По заявке' : money(product.price)}</b><button aria-label={isCake ? `Открыть заявку: ${product.name}` : `Добавить ${product.name}`} onClick={isCake ? open : onAdd}>{isCake ? <ArrowRight size={20} /> : <Plus size={20} />}</button></div>
+      <button className="product-photo" onClick={open}><img src={product.image} alt={product.name} loading="lazy" /><span>{product.category}</span></button>
+      <button className="product-copy" onClick={open}><strong>{product.name}</strong><small>{product.description}</small></button>
+      <div className="product-bottom"><span><b>{money(product.price)}</b><small>{product.weight}</small></span><button aria-label={`Добавить ${product.name}`} onClick={onAdd}><Plus size={20} /></button></div>
     </article>
   )
 }
@@ -371,7 +359,7 @@ function ProductScreen({ product, quantity, onAdd }: { product: Product; quantit
   return (
     <div className="screen product-screen">
       <div className="product-hero"><img src={product.image} alt={product.name} /><button className="icon-button overlay" onClick={() => navigate('/catalog')} aria-label="Назад"><ArrowLeft /></button><span>{product.category}</span></div>
-      <div className="product-detail"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p>{product.note}.</p><div className="detail-facts"><span><strong>Состав</strong><small>уточняется для точки</small></span><span><strong>Наличие</strong><small>доступно сейчас</small></span></div></div>
+      <div className="product-detail"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p>{product.description}</p><div className="detail-facts"><span><strong>Вес</strong><small>{product.weight}</small></span><a href={product.source} target="_blank" rel="noreferrer"><strong>Карточка блюда</strong><small>patrickmary.ru</small></a></div></div>
       <div className="sticky-action"><strong>{money(product.price)}</strong><button className="primary" onClick={() => quantity > 0 ? navigate('/cart') : onAdd(product)}>{quantity > 0 ? <><ShoppingBag size={19} /> Открыть корзину · {quantity}</> : <><Plus size={19} /> Добавить</>}</button></div>
     </div>
   )
@@ -434,11 +422,11 @@ function SuccessScreen({ order }: { order?: ConfirmedOrder }) {
 
 function RepeatScreen({ currentCart, onUse }: { currentCart: CartLine[]; onUse: (cart: CartLine[]) => void }) {
   const previous: CartLine[] = [
-    { id: 'syrniki', name: 'Сырники классические', price: 350, quantity: 1 },
-    { id: 'bakery', name: 'Пирог с орехами', price: 190, quantity: 2 },
+    { id: 'syrniki', name: 'Сырник творожный', price: 140, quantity: 1 },
+    { id: 'bakery', name: 'Киш из песочного теста с рыбой', price: 1090, quantity: 2 },
     { id: 'seasonal', name: 'Сезонная позиция', price: 260, quantity: 1 },
   ]
-  const reconciled = reconcileRepeat(previous, { syrniki: 390, bakery: 190 })
+  const reconciled = reconcileRepeat(previous, { syrniki: 150, bakery: 1132 })
   const available = reconciled.filter((line) => line.available)
   return (
     <div className="screen paper-screen">

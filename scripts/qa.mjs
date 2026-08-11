@@ -45,7 +45,7 @@ async function inspect(path, width, height) {
   if (!response?.ok()) problems.push(`${path} ${width}px HTTP ${response?.status()}`)
   const result = await page.evaluate(() => ({
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-    brokenImages: [...document.images].filter((item) => !item.complete || item.naturalWidth === 0).map((item) => item.src),
+    brokenImages: [...document.images].filter((item) => item.complete && item.naturalWidth === 0).map((item) => item.src),
     emptyRoot: !document.querySelector('#root, #case-root')?.textContent?.trim(),
   }))
   if (result.overflow) problems.push(`${path} ${width}px horizontal overflow`)
@@ -124,14 +124,14 @@ async function runMobileJourney(page) {
   await page.getByText('Доставка · ул. Красная, 64').waitFor()
 
   await assertBottomNav(page, 'каталог')
-  await page.getByRole('textbox', { name: 'Поиск по меню' }).fill('сырники')
-  await page.getByRole('button', { name: /Сырники классические/ }).first().click()
+  await page.getByRole('textbox', { name: 'Поиск по меню' }).fill('сырник')
+  await page.getByRole('button', { name: /Сырник творожный/ }).first().click()
   if (await page.locator('.product-hero img').getAttribute('src') !== 'https://api.patrickmary.ru/api/file/Nomenclature729x475/10754/6f116cfa-e348-11db-a154-0011671aa2d0_99-0005168_729x475.jpg') throw new Error('у сырников неверное изображение')
   await page.getByRole('button', { name: /^Добавить$/ }).click()
   await page.getByRole('button', { name: /Открыть корзину · 1/ }).click()
-  const syrnikiLine = page.locator('.cart-line').filter({ hasText: 'Сырники классические' })
+  const syrnikiLine = page.locator('.cart-line').filter({ hasText: 'Сырник творожный' })
   await syrnikiLine.getByText('1', { exact: true }).waitFor()
-  if (!await page.getByText('390 ₽', { exact: true }).count()) throw new Error('повторное нажатие незаметно изменило сумму')
+  if (!await page.getByText('150 ₽', { exact: true }).count()) throw new Error('повторное нажатие незаметно изменило сумму')
   await syrnikiLine.getByRole('button', { name: 'Увеличить' }).click()
   await syrnikiLine.getByText('2', { exact: true }).waitFor()
   await syrnikiLine.getByRole('button', { name: 'Уменьшить' }).click()
@@ -147,15 +147,15 @@ async function runMobileJourney(page) {
   await page.getByText('Доставка · ул. Красная, 64').waitFor()
   await page.getByRole('button', { name: /Повторить оплату/ }).click()
   await page.getByRole('heading', { name: 'Заказ подтверждён' }).waitFor()
-  await page.getByText('Сырники классические × 1').waitFor()
-  await page.getByText('390 ₽', { exact: true }).waitFor()
+  await page.getByText('Сырник творожный × 1').waitFor()
+  await page.getByText('150 ₽', { exact: true }).waitFor()
   await page.getByRole('button', { name: 'Посмотреть историю' }).click()
   await page.getByText('Доставка · ул. Красная, 64').waitFor()
-  await page.getByText('Сырники классические × 1').waitFor()
+  await page.getByText('Сырник творожный × 1').waitFor()
   await assertBottomNav(page, 'заказы')
 
   const afterOrder = await page.evaluate(() => JSON.parse(sessionStorage.getItem('pm-demo-state') || '{}'))
-  if (afterOrder.cart?.length !== 0 || afterOrder.orders?.[0]?.amount !== 390) throw new Error('заказ не сохранён или корзина не очищена')
+  if (afterOrder.cart?.length !== 0 || afterOrder.orders?.[0]?.amount !== 150) throw new Error('заказ не сохранён или корзина не очищена')
 
   await page.goto(new URL('#/mode', base).toString(), { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /Самовывоз/ }).click()
@@ -168,11 +168,11 @@ async function runMobileJourney(page) {
   await page.getByText('Самовывоз · ул. Кубанская набережная, 35').waitFor()
 
   await page.goto(new URL('#/repeat', base).toString(), { waitUntil: 'networkidle' })
-  await page.getByText('Сырники классические · 1 шт.').waitFor()
-  await page.getByText('Пирог с орехами · 2 шт.').waitFor()
-  await page.getByText('3 шт. · 770 ₽').waitFor()
-  await page.getByRole('button', { name: /Собрать корзину · 770 ₽/ }).click()
-  await page.locator('.cart-line').filter({ hasText: 'Пирог с орехами' }).getByText('2', { exact: true }).waitFor()
+  await page.getByText('Сырник творожный · 1 шт.').waitFor()
+  await page.getByText('Киш из песочного теста с рыбой · 2 шт.').waitFor()
+  await page.getByText('3 шт. · 2 414 ₽').waitFor()
+  await page.getByRole('button', { name: /Собрать корзину · 2 414 ₽/ }).click()
+  await page.locator('.cart-line').filter({ hasText: 'Киш из песочного теста с рыбой' }).getByText('2', { exact: true }).waitFor()
   const repeated = await page.evaluate(() => JSON.parse(sessionStorage.getItem('pm-demo-state') || '{}').cart)
   if (repeated?.find((line) => line.id === 'bakery')?.quantity !== 2) throw new Error('количества повтора не совпадают с корзиной')
 
@@ -203,6 +203,19 @@ async function runMobileJourney(page) {
 for (const width of [360, 390, 430]) {
   await scenario('полный мобильный путь', width, runMobileJourney)
 }
+
+await scenario('официальные категории меню', 390, async (page) => {
+  await page.goto(new URL('?seed=qa#/catalog', base).toString(), { waitUntil: 'networkidle' })
+  const categoryButtons = page.locator('.category-chips button')
+  if (await categoryButtons.count() !== 20) throw new Error('показаны не все 19 категорий меню')
+  for (const button of await categoryButtons.all()) {
+    const label = (await button.textContent())?.replace(/\d+$/, '')
+    if (!label || label === 'Всё') continue
+    await button.click()
+    const count = await page.locator('.product-card').count()
+    if (count < 2 || count > 3) throw new Error(`${label}: показано ${count} позиций`)
+  }
+})
 
 await scenario('case links and device frames', 390, async (page) => {
   const allLinks = []
