@@ -74,15 +74,18 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 .welcome-card p { margin: 0 0 17px; color: rgba(255,255,255,.82); font-size: 12px; line-height: 1.5; max-width: 280px; }
 .welcome-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .welcome-actions .primary { min-height: 46px; padding: 0 10px; font-size: 12px; }
-.quick-grid { display: grid; grid-template-columns: 1.18fr .82fr; gap: 10px; margin: 0 14px 22px; }
-.quick-grid button { min-height: 114px; border: 0; border-radius: 24px; padding: 17px; text-align: left; cursor: pointer; }
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 14px 22px; }
+.quick-grid button { min-height: 132px; border: 0; border-radius: 24px; padding: 17px; text-align: left; cursor: pointer; }
 .loyalty-tile { background: var(--brown); color: #fff; display: flex; flex-direction: column; }
 .loyalty-tile > span { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #f1c7a8; }
 .loyalty-tile strong { font: 400 31px/1 'Prata', serif; margin-top: auto; }
 .loyalty-tile small { color: #c9aaa0; font-size: 9px; }
-.cake-tile { background: #f5d5d6; color: #6f2935; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; }
-.cake-tile span { font-size: 10px; line-height: 1.35; }
-.cake-tile strong { font-family: 'Prata', serif; font-weight: 400; font-size: 15px; }
+.cake-tile { position: relative; isolation: isolate; overflow: hidden; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(180deg, rgba(46,20,17,.08) 8%, rgba(54,20,21,.82) 100%), url('/assets/food/cakes.jpg') center/cover; box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+.cake-tile::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.12), transparent 45%); pointer-events: none; }
+.cake-tile-kicker { align-self: flex-start; margin-bottom: auto; padding: 6px 8px; border-radius: 99px; color: #fff; background: rgba(70,28,28,.58); backdrop-filter: blur(7px); font-size: 8px; font-weight: 800; letter-spacing: .04em; }
+.cake-tile > strong { max-width: 125px; font: 400 18px/1.12 'Prata', serif; letter-spacing: -.02em; text-wrap: balance; }
+.cake-tile > small { margin-top: 5px; color: rgba(255,255,255,.78); font-size: 8px; line-height: 1.35; }
+.cake-tile-arrow { position: absolute; right: 13px; top: 13px; width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; color: #6d3037; background: rgba(255,255,255,.9); box-shadow: 0 6px 16px rgba(48,17,18,.18); }
 .section-block { margin: 0 20px 24px; }
 .section-title { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; }
 .section-title > button { border: 0; background: transparent; color: var(--orange-dark); font-size: 11px; font-weight: 800; cursor: pointer; }

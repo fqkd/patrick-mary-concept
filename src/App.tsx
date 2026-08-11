@@ -249,8 +249,11 @@ function HomeScreen({ state, onMode }: { state: DemoState; onMode: (mode: Servic
           <span><WalletCards size={22} /> Карта</span>
           <strong>1 240</strong><small>баллов · код сохранён на устройстве</small>
         </button>
-        <button className="cake-tile" onClick={() => navigate('/cake')}>
-          <CakeSlice size={23} /><span>Торт<br /><strong>к событию</strong></span><ChevronRight size={17} />
+        <button className="cake-tile" aria-label="Торт к событию — собрать заявку" onClick={() => navigate('/cake')}>
+          <span className="cake-tile-kicker">Торты на заказ</span>
+          <strong>Торт к событию</strong>
+          <small>Размер и оформление</small>
+          <span className="cake-tile-arrow"><ArrowRight size={17} /></span>
         </button>
       </section>
 
