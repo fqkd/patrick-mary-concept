@@ -59,6 +59,7 @@ const prototypeRoutes = [
   '?seed=qa#/product/syrniki', '?seed=qa#/cart', '?seed=qa#/time', '?seed=qa#/checkout',
   '?seed=qa#/payment-error', '?seed=qa#/success', '?seed=qa#/repeat', '?seed=qa#/cake',
   '?seed=qa#/cake-confirm', '?seed=qa#/loyalty', '?seed=qa#/login', '?seed=qa#/orders',
+  '?seed=qa#/favorites',
 ]
 
 for (const width of [360, 390, 430]) {
@@ -112,20 +113,44 @@ async function assertBottomNav(page, label) {
 
 async function runMobileJourney(page) {
   await page.goto(new URL('#/', base).toString(), { waitUntil: 'networkidle' })
-  await page.evaluate(() => sessionStorage.clear())
+  await page.evaluate(() => { sessionStorage.clear(); localStorage.clear() })
   await page.reload({ waitUntil: 'networkidle' })
 
   if (await page.locator('.safe-top').count()) throw new Error('декоративный верхний вырез остался в прототипе')
 
-  await page.getByRole('button', { name: 'Доставка', exact: true }).click()
+  await page.getByRole('button', { name: /^Доставка/ }).click()
   const addressSearch = page.getByRole('textbox', { name: 'Поиск адреса доставки' })
   await addressSearch.fill('Красная')
   await page.getByRole('button', { name: /ул. Красная, 64/ }).click()
   await page.getByText('Доставка · ул. Красная, 64').waitFor()
 
   await assertBottomNav(page, 'каталог')
+  await page.locator('.screen').evaluate((element) => { element.scrollTop = 0 })
+  await page.getByRole('heading', { name: 'Всё меню' }).waitFor()
+  if (await page.locator('.menu-category-section').count() !== 19) throw new Error('всё меню не разделено на 19 категорий')
   await page.getByRole('textbox', { name: 'Поиск по меню' }).fill('сырник')
-  await page.getByRole('button', { name: /Сырник творожный/ }).first().click()
+  const foundSyrniki = page.locator('.product-card').filter({ hasText: 'Сырник творожный' })
+  await foundSyrniki.getByRole('button', { name: 'Добавить Сырник творожный в избранное' }).click()
+  await page.getByRole('button', { name: 'Избранное', exact: true }).click()
+  await page.getByRole('heading', { name: 'Избранное' }).last().waitFor()
+  await page.getByText('Сырник творожный', { exact: true }).waitFor()
+  await assertBottomNav(page, 'избранное')
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByText('Сырник творожный', { exact: true }).waitFor()
+  const storedFavorites = await page.evaluate(() => JSON.parse(localStorage.getItem('pm-favorites') || '[]'))
+  if (!storedFavorites.includes('syrniki')) throw new Error('избранное не сохранилось после обновления')
+  await page.evaluate(() => sessionStorage.clear())
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByText('Сырник творожный', { exact: true }).waitFor()
+  await page.goto(new URL('#/mode', base).toString(), { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /^Доставка/ }).click()
+  await page.getByRole('textbox', { name: 'Поиск адреса доставки' }).fill('Красная')
+  await page.getByRole('button', { name: /ул. Красная, 64/ }).click()
+  await page.getByText('Доставка · ул. Красная, 64').waitFor()
+  await page.getByRole('button', { name: 'Меню', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Поиск по меню' }).fill('сырник')
+  await page.locator('.product-card').filter({ hasText: 'Сырник творожный' }).locator('.product-copy').click()
+  await page.getByRole('button', { name: 'Удалить из избранного' }).waitFor()
   if (await page.locator('.product-hero img').getAttribute('src') !== 'https://api.patrickmary.ru/api/file/Nomenclature729x475/10754/6f116cfa-e348-11db-a154-0011671aa2d0_99-0005168_729x475.jpg') throw new Error('у сырников неверное изображение')
   await page.getByRole('button', { name: /^Добавить$/ }).click()
   await page.getByRole('button', { name: /Открыть корзину · 1/ }).click()
@@ -206,15 +231,18 @@ for (const width of [360, 390, 430]) {
 
 await scenario('официальные категории меню', 390, async (page) => {
   await page.goto(new URL('?seed=qa#/catalog', base).toString(), { waitUntil: 'networkidle' })
-  const categoryButtons = page.locator('.category-chips button')
-  if (await categoryButtons.count() !== 20) throw new Error('показаны не все 19 категорий меню')
-  for (const button of await categoryButtons.all()) {
-    const label = (await button.textContent())?.replace(/\d+$/, '')
-    if (!label || label === 'Всё') continue
-    await button.click()
-    const count = await page.locator('.product-card').count()
-    if (count < 2 || count > 3) throw new Error(`${label}: показано ${count} позиций`)
+  await page.getByRole('heading', { name: 'Всё меню' }).waitFor()
+  const sections = page.locator('.menu-category-section')
+  if (await sections.count() !== 19) throw new Error('показаны не все 19 разделов меню')
+  for (const section of await sections.all()) {
+    const count = await section.locator('.product-card').count()
+    if (count < 2 || count > 3) throw new Error(`в разделе показано ${count} позиций`)
   }
+  await page.getByRole('button', { name: 'Все категории' }).click()
+  if (await page.locator('.category-panel button').count() !== 20) throw new Error('в выборе нет пункта «Всё меню» и 19 категорий')
+  await page.locator('.category-panel button').filter({ hasText: 'Завтраки' }).click()
+  await page.getByRole('heading', { name: 'Завтраки' }).waitFor()
+  if (await page.locator('.product-card').count() !== 3) throw new Error('в категории «Завтраки» показано неверное число позиций')
 })
 
 await scenario('case links and device frames', 390, async (page) => {
@@ -245,4 +273,4 @@ if (problems.length) {
   console.error(problems.join('\n'))
   process.exit(1)
 }
-console.log('QA passed: 16 routes at 360/390/430; full delivery, pickup, product, order, repeat, loyalty and cake flows at every width; fixed nav; no top cutout; case at 390/768/1440; deep links; console; overflow')
+console.log('QA passed: 17 routes at 360/390/430; grouped categories, persistent favorites, full delivery, pickup, product, order, repeat, loyalty and cake flows; fixed five-tab nav; case at 390/768/1440; deep links; console; overflow')

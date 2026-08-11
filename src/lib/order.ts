@@ -69,6 +69,9 @@ export const createCakeRequest = (size: string, design: string): CakeRequest => 
   status: 'Сохранена',
 })
 
+export const toggleFavoriteId = (ids: string[], id: string) =>
+  ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]
+
 export const filterLocations = (locations: string[], query: string) => {
   const normalized = query.trim().toLocaleLowerCase('ru-RU')
   return normalized

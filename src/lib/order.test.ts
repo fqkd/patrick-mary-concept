@@ -7,6 +7,7 @@ import {
   createConfirmedOrder,
   filterLocations,
   reconcileRepeat,
+  toggleFavoriteId,
   total,
   type CartLine,
 } from './order.ts'
@@ -67,6 +68,12 @@ test('cake request contains only choices made by the user', () => {
     design: 'Ягодный акцент',
     status: 'Сохранена',
   })
+})
+
+test('favorite toggle adds and removes a product without duplicates', () => {
+  const added = toggleFavoriteId([], 'syrniki')
+  assert.deepEqual(added, ['syrniki'])
+  assert.deepEqual(toggleFavoriteId(added, 'syrniki'), [])
 })
 
 test('location search filters the selectable list', () => {

@@ -7,7 +7,9 @@ import {
   ChevronRight,
   Clock3,
   CreditCard,
+  Heart,
   Home,
+  LayoutGrid,
   MapPin,
   Minus,
   PackageCheck,
@@ -29,6 +31,7 @@ import {
   createConfirmedOrder,
   filterLocations,
   reconcileRepeat,
+  toggleFavoriteId,
   total,
   type CakeRequest,
   type CartLine,
@@ -44,9 +47,10 @@ type DemoState = {
   slot: string
   orders: ConfirmedOrder[]
   cakeRequest: CakeRequest | null
+  favorites: string[]
 }
 
-const emptyState: DemoState = { mode: null, location: '', cart: [], slot: '', orders: [], cakeRequest: null }
+const emptyState: DemoState = { mode: null, location: '', cart: [], slot: '', orders: [], cakeRequest: null, favorites: [] }
 
 const demoCart: CartLine[] = [
   { id: 'syrniki', name: 'Сырник творожный', price: 150, quantity: 1 },
@@ -69,6 +73,15 @@ const formatContext = (state: Pick<DemoState, 'mode' | 'location'>) => {
   return `${state.mode === 'delivery' ? 'Доставка' : 'Самовывоз'} · ${state.location}`
 }
 
+const readFavoriteIds = () => {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem('pm-favorites') ?? '[]') as unknown
+    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string' && products.some((product) => product.id === id)) : []
+  } catch {
+    return []
+  }
+}
+
 const normalizeState = (saved: Partial<DemoState>): DemoState => ({
   ...emptyState,
   ...saved,
@@ -78,6 +91,7 @@ const normalizeState = (saved: Partial<DemoState>): DemoState => ({
   }),
   orders: saved.orders ?? [],
   cakeRequest: saved.cakeRequest ?? null,
+  favorites: [...new Set(saved.favorites ?? readFavoriteIds())].filter((id) => products.some((product) => product.id === id)),
 })
 
 const seedState = (): DemoState => {
@@ -91,13 +105,14 @@ const seedState = (): DemoState => {
       slot: 'Сегодня · 19:10–19:25',
       orders: [seededOrder],
       cakeRequest: createCakeRequest('На 8–10 гостей', 'Светлое оформление'),
+      favorites: readFavoriteIds(),
     }
   }
   try {
     const saved = window.sessionStorage.getItem('pm-demo-state')
-    return saved ? normalizeState(JSON.parse(saved) as Partial<DemoState>) : emptyState
+    return saved ? normalizeState(JSON.parse(saved) as Partial<DemoState>) : { ...emptyState, favorites: readFavoriteIds() }
   } catch {
-    return emptyState
+    return { ...emptyState, favorites: readFavoriteIds() }
   }
 }
 
@@ -114,6 +129,7 @@ export function App() {
 
   useEffect(() => {
     window.sessionStorage.setItem('pm-demo-state', JSON.stringify(state))
+    window.localStorage.setItem('pm-favorites', JSON.stringify(state.favorites))
   }, [state])
 
   const chooseMode = (mode: ServiceMode) => {
@@ -141,6 +157,10 @@ export function App() {
     setState((current) => ({ ...current, cart: changeQuantity(current.cart, id, delta) }))
   }
 
+  const toggleFavorite = (id: string) => {
+    setState((current) => ({ ...current, favorites: toggleFavoriteId(current.favorites, id) }))
+  }
+
   const confirmOrder = () => {
     setState((current) => {
       if (!current.mode || !current.location || !current.slot || current.cart.length === 0) return current
@@ -151,6 +171,7 @@ export function App() {
   }
 
   const activeNav = route === '/catalog' ? 'catalog'
+    : route === '/favorites' ? 'favorites'
     : route === '/orders' ? 'orders'
       : route === '/loyalty' ? 'card'
         : route === '/' ? 'home' : null
@@ -158,10 +179,11 @@ export function App() {
   let content: ReactNode
   if (route === '/mode') content = <ModeScreen onChoose={chooseMode} />
   else if (route === '/location') content = <LocationScreen mode={state.mode} loading={loading} onChoose={chooseLocation} />
-  else if (route === '/catalog') content = <CatalogScreen state={state} onAdd={addProduct} />
+  else if (route === '/catalog') content = <CatalogScreen state={state} onAdd={addProduct} onToggleFavorite={toggleFavorite} />
+  else if (route === '/favorites') content = <FavoritesScreen state={state} onAdd={addProduct} onToggleFavorite={toggleFavorite} />
   else if (route.startsWith('/product/')) {
     const product = products.find((item) => item.id === route.split('/').at(-1)) ?? products[0]
-    content = <ProductScreen product={product} quantity={state.cart.find((line) => line.id === product.id)?.quantity ?? 0} onAdd={addProduct} />
+    content = <ProductScreen product={product} quantity={state.cart.find((line) => line.id === product.id)?.quantity ?? 0} favorite={state.favorites.includes(product.id)} onAdd={addProduct} onToggleFavorite={toggleFavorite} />
   }
   else if (route === '/cart') content = <CartScreen state={state} onChange={changeLine} />
   else if (route === '/time') content = <TimeScreen state={state} onSelect={(slot) => setState((current) => ({ ...current, slot }))} />
@@ -179,7 +201,7 @@ export function App() {
   return <DeviceStage activeNav={activeNav}>{content}</DeviceStage>
 }
 
-function DeviceStage({ children, activeNav }: { children: ReactNode; activeNav: 'home' | 'catalog' | 'orders' | 'card' | null }) {
+function DeviceStage({ children, activeNav }: { children: ReactNode; activeNav: 'home' | 'catalog' | 'favorites' | 'orders' | 'card' | null }) {
   return (
     <div className="device-stage">
       <div className={`phone-shell${activeNav ? ' has-bottom-nav' : ''}`}>
@@ -206,10 +228,11 @@ function Header({ title, back = '/', action }: { title: string; back?: string; a
   )
 }
 
-function BottomNav({ active }: { active: 'home' | 'catalog' | 'orders' | 'card' }) {
+function BottomNav({ active }: { active: 'home' | 'catalog' | 'favorites' | 'orders' | 'card' }) {
   const items = [
     { id: 'home', label: 'Главная', icon: Home, path: '/' },
     { id: 'catalog', label: 'Меню', icon: Utensils, path: '/catalog' },
+    { id: 'favorites', label: 'Избранное', icon: Heart, path: '/favorites' },
     { id: 'orders', label: 'Заказы', icon: ShoppingBag, path: '/orders' },
     { id: 'card', label: 'Карта', icon: WalletCards, path: '/loyalty' },
   ] as const
@@ -319,27 +342,43 @@ function LocationScreen({ mode, loading, onChoose }: { mode: ServiceMode | null;
   )
 }
 
-function CatalogScreen({ state, onAdd }: { state: DemoState; onAdd: (product: Product) => void }) {
+function CatalogScreen({ state, onAdd, onToggleFavorite }: { state: DemoState; onAdd: (product: Product) => void; onToggleFavorite: (id: string) => void }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Всё')
-  const categories = ['Всё', ...officialCategories]
+  const [showCategories, setShowCategories] = useState(false)
   const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU')
-  const shown = products.filter((product) => (category === 'Всё' || product.category === category)
-    && (!normalizedQuery
-      || product.name.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
-      || product.category.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
-      || product.description.toLocaleLowerCase('ru-RU').includes(normalizedQuery)))
+  const matchesSearch = (product: Product) => !normalizedQuery
+    || product.name.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
+    || product.category.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
+    || product.description.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
+  const shown = products.filter((product) => matchesSearch(product) && (normalizedQuery || category === 'Всё' || product.category === category))
+  const selectCategory = (value: string) => {
+    setCategory(value)
+    setQuery('')
+    setShowCategories(false)
+  }
+  const heading = normalizedQuery ? 'Результаты поиска' : category === 'Всё' ? 'Всё меню' : category
+  const subtitle = normalizedQuery
+    ? `${shown.length} ${shown.length === 1 ? 'позиция' : shown.length < 5 ? 'позиции' : 'позиций'}`
+    : category === 'Всё' ? `${products.length} позиций · ${officialCategories.length} категорий` : `${shown.length} позиции`
   return (
     <div className="screen with-nav catalog-screen">
-      <Header title="Готовая еда" back="/" action={<button className="bag-button" aria-label="Корзина" onClick={() => navigate('/cart')}><ShoppingBag size={20} />{state.cart.length > 0 && <b>{state.cart.reduce((sum, item) => sum + item.quantity, 0)}</b>}</button>} />
+      <Header title="Меню" back="/" action={<button className="bag-button" aria-label="Корзина" onClick={() => navigate('/cart')}><ShoppingBag size={20} />{state.cart.length > 0 && <b>{state.cart.reduce((sum, item) => sum + item.quantity, 0)}</b>}</button>} />
       <button className="catalog-context" onClick={() => navigate('/mode')}><span>{state.mode === 'delivery' ? 'Доставка' : 'Самовывоз'} · {state.location || 'точка не выбрана'}</span><ChevronRight size={16} /></button>
       <div className="catalog-body">
         <label className="real-search"><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти в меню" aria-label="Поиск по меню" /></label>
-        <div className="category-chips" aria-label="Категории меню">{categories.map((item) => <button key={item} className={category === item ? 'active' : ''} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}{item !== 'Всё' && <small>{products.filter((product) => product.category === item).length}</small>}</button>)}</div>
+        <div className="menu-heading"><div><span className="eyebrow">Каталог</span><h1>{heading}</h1><small>{subtitle}</small></div><button className="categories-button" aria-expanded={showCategories} onClick={() => setShowCategories((visible) => !visible)}><LayoutGrid size={16} /> Все категории</button></div>
+        {showCategories && <div className="category-panel" aria-label="Все категории">
+          <button className={`all${category === 'Всё' ? ' active' : ''}`} aria-pressed={category === 'Всё'} onClick={() => selectCategory('Всё')}><span>Всё меню</span><small>{products.length}</small></button>
+          {officialCategories.map((item) => <button key={item} className={category === item ? 'active' : ''} aria-pressed={category === item} onClick={() => selectCategory(item)}><span>{item}</span><small>{products.filter((product) => product.category === item).length}</small></button>)}
+        </div>}
         {shown.length === 0 ? <div className="empty-state"><Search size={36} /><h2>Ничего не нашли</h2><p>Попробуйте название категории или вернитесь ко всему меню.</p><button className="primary" onClick={() => { setQuery(''); setCategory('Всё') }}>Показать всё</button></div> : (
-          <div className="product-grid">
-            {shown.map((product) => <ProductCard key={product.id} product={product} onAdd={() => onAdd(product)} />)}
-          </div>
+          normalizedQuery || category !== 'Всё' ? <div className="product-grid">
+            {shown.map((product) => <ProductCard key={product.id} product={product} favorite={state.favorites.includes(product.id)} onToggleFavorite={() => onToggleFavorite(product.id)} onAdd={() => onAdd(product)} />)}
+          </div> : <div className="menu-category-list">{officialCategories.map((item) => {
+            const categoryProducts = products.filter((product) => product.category === item)
+            return <section className="menu-category-section" key={item}><header><div><h2>{item}</h2><span>{categoryProducts.length} позиции</span></div><button onClick={() => selectCategory(item)}>Открыть <ArrowRight size={14} /></button></header><div className="product-grid">{categoryProducts.map((product) => <ProductCard key={product.id} product={product} favorite={state.favorites.includes(product.id)} onToggleFavorite={() => onToggleFavorite(product.id)} onAdd={() => onAdd(product)} />)}</div></section>
+          })}</div>
         )}
       </div>
       {state.cart.length > 0 && <button className="floating-cart" onClick={() => navigate('/cart')}><span><ShoppingBag size={19} /> Корзина · {state.cart.reduce((sum, item) => sum + item.quantity, 0)}</span><strong>{money(total(state.cart))}</strong></button>}
@@ -347,10 +386,11 @@ function CatalogScreen({ state, onAdd }: { state: DemoState; onAdd: (product: Pr
   )
 }
 
-function ProductCard({ product, onAdd }: { product: Product; onAdd: () => void }) {
+function ProductCard({ product, favorite, onToggleFavorite, onAdd }: { product: Product; favorite: boolean; onToggleFavorite: () => void; onAdd: () => void }) {
   const open = () => navigate(`/product/${product.id}`)
   return (
     <article className="product-card">
+      <button className={`favorite-button${favorite ? ' active' : ''}`} aria-label={favorite ? `Удалить ${product.name} из избранного` : `Добавить ${product.name} в избранное`} aria-pressed={favorite} onClick={onToggleFavorite}><Heart size={17} fill={favorite ? 'currentColor' : 'none'} /></button>
       <button className="product-photo" onClick={open}><img src={product.image} alt={product.name} loading="lazy" /><span>{product.category}</span></button>
       <button className="product-copy" onClick={open}><strong>{product.name}</strong><small>{product.description}</small></button>
       <div className="product-bottom"><span><b>{money(product.price)}</b><small>{product.weight}</small></span><button aria-label={`Добавить ${product.name}`} onClick={onAdd}><Plus size={20} /></button></div>
@@ -358,12 +398,24 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: () => void }
   )
 }
 
-function ProductScreen({ product, quantity, onAdd }: { product: Product; quantity: number; onAdd: (product: Product) => void }) {
+function ProductScreen({ product, quantity, favorite, onAdd, onToggleFavorite }: { product: Product; quantity: number; favorite: boolean; onAdd: (product: Product) => void; onToggleFavorite: (id: string) => void }) {
   return (
     <div className="screen product-screen">
-      <div className="product-hero"><img src={product.image} alt={product.name} /><button className="icon-button overlay" onClick={() => navigate('/catalog')} aria-label="Назад"><ArrowLeft /></button><span>{product.category}</span></div>
+      <div className="product-hero"><img src={product.image} alt={product.name} /><button className="icon-button overlay" onClick={() => navigate('/catalog')} aria-label="Назад"><ArrowLeft /></button><button className={`icon-button favorite-detail${favorite ? ' active' : ''}`} aria-label={`${favorite ? 'Удалить из' : 'Добавить в'} избранного`} aria-pressed={favorite} onClick={() => onToggleFavorite(product.id)}><Heart fill={favorite ? 'currentColor' : 'none'} /></button><span>{product.category}</span></div>
       <div className="product-detail"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p>{product.description}</p><div className="detail-facts"><span><strong>Вес</strong><small>{product.weight}</small></span><a href={product.source} target="_blank" rel="noreferrer"><strong>Карточка блюда</strong><small>patrickmary.ru</small></a></div></div>
       <div className="sticky-action"><strong>{money(product.price)}</strong><button className="primary" onClick={() => quantity > 0 ? navigate('/cart') : onAdd(product)}>{quantity > 0 ? <><ShoppingBag size={19} /> Открыть корзину · {quantity}</> : <><Plus size={19} /> Добавить</>}</button></div>
+    </div>
+  )
+}
+
+function FavoritesScreen({ state, onAdd, onToggleFavorite }: { state: DemoState; onAdd: (product: Product) => void; onToggleFavorite: (id: string) => void }) {
+  const favoriteProducts = products.filter((product) => state.favorites.includes(product.id))
+  return (
+    <div className="screen with-nav paper-screen favorites-screen">
+      <Header title="Избранное" />
+      <div className="favorites-body"><div className="menu-heading"><div><span className="eyebrow">Сохранённое</span><h1>Избранное</h1><small>{favoriteProducts.length > 0 ? `${favoriteProducts.length} ${favoriteProducts.length === 1 ? 'позиция' : favoriteProducts.length < 5 ? 'позиции' : 'позиций'}` : 'Добавляйте блюда из меню'}</small></div></div>
+        {favoriteProducts.length === 0 ? <div className="empty-state tall"><Heart size={42} /><h2>Здесь пока пусто</h2><p>Нажмите на сердечко в меню или карточке товара — позиция сохранится здесь.</p><button className="primary" onClick={() => navigate('/catalog')}>Открыть меню</button></div> : <div className="product-grid">{favoriteProducts.map((product) => <ProductCard key={product.id} product={product} favorite onToggleFavorite={() => onToggleFavorite(product.id)} onAdd={() => onAdd(product)} />)}</div>}
+      </div>
     </div>
   )
 }

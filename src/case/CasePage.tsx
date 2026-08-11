@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, CakeSlice, Check, Clock3, MapPin, PackageCheck, RefreshCw, SignalLow, Smartphone, Store, WalletCards } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CakeSlice, Check, Clock3, Heart, MapPin, PackageCheck, RefreshCw, SignalLow, Smartphone, Store, WalletCards } from 'lucide-react'
 
 const slidesCount = 12
 const proto = (route: string) => `../?seed=case#${route}`
@@ -117,7 +117,7 @@ function CakeScenario() {
 
 function BusinessFit() {
   return (
-    <section className="standard-layout fit-slide"><div className="slide-copy"><SectionLabel number="08">Связь с бизнесом</SectionLabel><h2>Один интерфейс<br />для разных частот</h2><p>Регулярная готовая еда и редкий торт не конкурируют на одном экране — у каждого сценария свой темп.</p></div><div className="fit-grid"><article className="daily"><span>Каждый день</span><h3>Быстрая готовая еда</h3><p>Место → доступность → корзина → время.</p><div className="mini-path"><PackageCheck /><ArrowRight /><Store /><ArrowRight /><Clock3 /></div></article><article className="habit"><span>Регулярно</span><h3>Карта и повтор</h3><p>Карта доступна сразу; прошлый заказ проверяется перед добавлением.</p><div className="mini-path"><WalletCards /><ArrowRight /><RefreshCw /></div></article><article className="event"><span>К событию</span><h3>Заявка на торт</h3><p>Размер и оформление сохраняются отдельно; остальные параметры согласуются.</p><div className="mini-path"><CakeSlice /><ArrowRight /><Check /></div></article></div></section>
+    <section className="standard-layout fit-slide"><div className="slide-copy"><SectionLabel number="08">Связь с бизнесом</SectionLabel><h2>Один интерфейс<br />для разных частот</h2><p>Регулярная готовая еда и редкий торт не конкурируют на одном экране — у каждого сценария свой темп.</p></div><div className="fit-grid"><article className="daily"><span>Каждый день</span><h3>Быстрая готовая еда</h3><p>Место → категория → корзина → время.</p><div className="mini-path"><PackageCheck /><ArrowRight /><Store /><ArrowRight /><Clock3 /></div></article><article className="habit"><span>Регулярно</span><h3>Избранное и повтор</h3><p>Любимые позиции сохраняются; прошлый заказ проверяется перед добавлением.</p><div className="mini-path"><Heart /><ArrowRight /><RefreshCw /></div></article><article className="event"><span>К событию</span><h3>Заявка на торт</h3><p>Размер и оформление сохраняются отдельно; остальные параметры согласуются.</p><div className="mini-path"><CakeSlice /><ArrowRight /><Check /></div></article></div></section>
   )
 }
 
