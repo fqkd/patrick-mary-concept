@@ -134,7 +134,7 @@ await scenario('case links and deep links', async (page) => {
     await page.goto(new URL(`case/#slide-${slide}`, base).toString(), { waitUntil: 'networkidle' })
     allLinks.push(...await page.locator('a[href]').evaluateAll((items) => items.map((item) => item.getAttribute('href')).filter(Boolean)))
   }
-  const expected = ['#/mode', '#/payment-error', '#/loyalty', '#/cake', 'mailto:hello@eh.works', 'https://eh.works']
+  const expected = ['#/mode', '#/payment-error', '#/loyalty', '#/cake', 'mailto:hello@eh.works', 'https://eh.works', 'https://t.me/andrey_ergohaven', 'https://max.ru/id5041212966_biz']
   for (const value of expected) {
     if (!allLinks.some((href) => href.includes(value))) problems.push(`case links: missing ${value}`)
   }
