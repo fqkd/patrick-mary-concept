@@ -1,6 +1,30 @@
 import { chromium } from 'playwright'
+import { spawn } from 'node:child_process'
 
-const base = process.env.BASE_URL || 'http://127.0.0.1:4173/'
+const remoteBase = process.env.BASE_URL
+const base = remoteBase || 'http://127.0.0.1:4173/'
+let preview
+
+process.on('exit', () => {
+  if (preview && !preview.killed) preview.kill('SIGTERM')
+})
+
+async function waitForServer(url) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    try {
+      const response = await fetch(url)
+      if (response.ok) return
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  throw new Error(`Сервер не ответил: ${url}`)
+}
+
+if (!remoteBase) {
+  preview = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', '4173', '--strictPort'], { stdio: ['ignore', 'pipe', 'pipe'] })
+  await waitForServer(base)
+}
+
 const browser = await chromium.launch({ headless: true })
 const problems = []
 
@@ -22,136 +46,190 @@ async function inspect(path, width, height) {
   const result = await page.evaluate(() => ({
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     brokenImages: [...document.images].filter((item) => !item.complete || item.naturalWidth === 0).map((item) => item.src),
+    emptyRoot: !document.querySelector('#root, #case-root')?.textContent?.trim(),
   }))
   if (result.overflow) problems.push(`${path} ${width}px horizontal overflow`)
+  if (result.emptyRoot) problems.push(`${path} ${width}px empty root`)
   for (const image of result.brokenImages) problems.push(`${path} ${width}px broken image ${image}`)
   await page.close()
 }
 
 const prototypeRoutes = [
-  '?seed=qa#/',
-  '?seed=qa#/mode',
-  '?seed=qa#/location',
-  '?seed=qa#/catalog',
-  '?seed=qa#/product/syrniki',
-  '?seed=qa#/cart',
-  '?seed=qa#/time',
-  '?seed=qa#/checkout',
-  '?seed=qa#/payment-error',
-  '?seed=qa#/success',
-  '?seed=qa#/repeat',
-  '?seed=qa#/cake',
-  '?seed=qa#/cake-confirm',
-  '?seed=qa#/loyalty',
-  '?seed=qa#/login',
-  '?seed=qa#/orders',
+  '?seed=qa#/', '?seed=qa#/mode', '?seed=qa#/location', '?seed=qa#/catalog',
+  '?seed=qa#/product/syrniki', '?seed=qa#/cart', '?seed=qa#/time', '?seed=qa#/checkout',
+  '?seed=qa#/payment-error', '?seed=qa#/success', '?seed=qa#/repeat', '?seed=qa#/cake',
+  '?seed=qa#/cake-confirm', '?seed=qa#/loyalty', '?seed=qa#/login', '?seed=qa#/orders',
 ]
 
 for (const width of [360, 390, 430]) {
-  for (const route of prototypeRoutes) await inspect(route, width, 844)
+  for (const route of prototypeRoutes) await inspect(route, width, width === 430 ? 932 : 844)
 }
-for (const route of ['?seed=qa#/', '?seed=qa#/catalog', '?seed=qa#/payment-error']) {
+for (const route of ['?seed=qa#/', '?seed=qa#/catalog', '?seed=qa#/product/syrniki', '?seed=qa#/payment-error']) {
   await inspect(route, 1440, 900)
 }
-
 for (const width of [390, 768, 1440]) {
   for (let slide = 1; slide <= 12; slide += 1) {
     await inspect(`case/#slide-${slide}`, width, width === 390 ? 844 : 900)
   }
 }
 
-async function scenario(name, run) {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
-  watch(page, name)
+async function scenario(name, width, run) {
+  const page = await browser.newPage({ viewport: { width, height: width === 430 ? 932 : 844 } })
+  watch(page, `${name} ${width}px`)
   try {
     await run(page)
   } catch (error) {
-    problems.push(`${name}: ${error instanceof Error ? error.message : error}`)
+    problems.push(`${name} ${width}px: ${error instanceof Error ? error.message : error}`)
   } finally {
     await page.close()
   }
 }
 
-await scenario('main order flow', async (page) => {
-  await page.goto(new URL('#/', base).toString(), { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: 'Доставка', exact: true }).click()
-  await page.getByText('Куда доставить?', { exact: true }).waitFor()
-  await page.getByRole('button', { name: /Демо-адрес · ул. Красная, 64/ }).click()
-  await page.getByText('Готовая еда', { exact: true }).first().waitFor()
+async function assertBottomNav(page, label) {
+  const hierarchy = await page.evaluate(() => ({
+    insideScreen: Boolean(document.querySelector('.screen .bottom-nav')),
+    directChild: document.querySelector('.phone-shell > .bottom-nav')?.parentElement?.classList.contains('phone-shell') ?? false,
+    nestedVerticalScrolls: [...document.querySelectorAll('.screen *')].filter((element) => {
+      const style = getComputedStyle(element)
+      return ['auto', 'scroll'].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 1
+    }).length,
+  }))
+  if (hierarchy.insideScreen || !hierarchy.directChild) throw new Error(`${label}: нижняя навигация находится внутри прокрутки`)
+  if (hierarchy.nestedVerticalScrolls) throw new Error(`${label}: найден вложенный вертикальный скролл`)
 
-  await page.getByRole('button', { name: 'Завтраки', exact: true }).click()
+  const screen = page.locator('.screen')
+  const nav = page.locator('.bottom-nav')
+  const shell = page.locator('.phone-shell')
+  const before = await nav.boundingBox()
+  await screen.evaluate((element) => { element.scrollTop = element.scrollHeight })
+  await page.waitForTimeout(120)
+  const after = await nav.boundingBox()
+  const shellBox = await shell.boundingBox()
+  if (!before || !after || !shellBox) throw new Error(`${label}: не удалось измерить навигацию`)
+  if (Math.abs(before.y - after.y) > 1) throw new Error(`${label}: навигация сдвинулась при прокрутке`)
+  if (Math.abs(after.y + after.height - (shellBox.y + shellBox.height)) > 1) throw new Error(`${label}: навигация не у нижней границы`)
+}
+
+async function runMobileJourney(page) {
+  await page.goto(new URL('#/', base).toString(), { waitUntil: 'networkidle' })
+  await page.evaluate(() => sessionStorage.clear())
+  await page.reload({ waitUntil: 'networkidle' })
+
+  if (await page.locator('.safe-top').count()) throw new Error('декоративный верхний вырез остался в прототипе')
+
+  await page.getByRole('button', { name: 'Доставка', exact: true }).click()
+  const addressSearch = page.getByRole('textbox', { name: 'Поиск адреса доставки' })
+  await addressSearch.fill('Красная')
+  await page.getByRole('button', { name: /ул. Красная, 64/ }).click()
+  await page.getByText('Доставка · ул. Красная, 64').waitFor()
+
+  await assertBottomNav(page, 'каталог')
+  await page.getByRole('textbox', { name: 'Поиск по меню' }).fill('сырники')
   await page.getByRole('button', { name: /Сырники классические/ }).first().click()
-  await page.getByRole('button', { name: /Добавить/ }).click()
-  await page.getByRole('button', { name: 'Назад' }).click()
-  await page.getByRole('button', { name: /Корзина/ }).last().click()
+  if (await page.locator('.product-hero img').getAttribute('src') !== 'https://api.patrickmary.ru/api/file/Nomenclature729x475/10754/6f116cfa-e348-11db-a154-0011671aa2d0_99-0005168_729x475.jpg') throw new Error('у сырников неверное изображение')
+  await page.getByRole('button', { name: /^Добавить$/ }).click()
+  await page.getByRole('button', { name: /Открыть корзину · 1/ }).click()
+  const syrnikiLine = page.locator('.cart-line').filter({ hasText: 'Сырники классические' })
+  await syrnikiLine.getByText('1', { exact: true }).waitFor()
+  if (!await page.getByText('390 ₽', { exact: true }).count()) throw new Error('повторное нажатие незаметно изменило сумму')
+  await syrnikiLine.getByRole('button', { name: 'Увеличить' }).click()
+  await syrnikiLine.getByText('2', { exact: true }).waitFor()
+  await syrnikiLine.getByRole('button', { name: 'Уменьшить' }).click()
+  await syrnikiLine.getByText('1', { exact: true }).waitFor()
+
   await page.getByRole('button', { name: /Выбрать время/ }).click()
   await page.getByRole('button', { name: /Сегодня · 19:10/ }).click()
   await page.getByRole('button', { name: /Перейти к оформлению/ }).click()
-  await page.getByRole('button', { name: /Оплатить в демо/ }).click()
-  await page.getByRole('heading', { name: /корзина сохранена/i }).waitFor()
-  await page.getByRole('button', { name: /Проверить корзину/ }).click()
-  await page.getByText('Демо-адрес · ул. Красная, 64').first().waitFor()
-  await page.goBack()
+  if (await page.getByRole('checkbox').count()) throw new Error('на оформлении осталось предварительное согласие')
+  await page.getByText('заказ и оплата никуда не отправятся', { exact: false }).waitFor()
+  await page.getByRole('button', { name: /Проверить оплату/ }).click()
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByText('Доставка · ул. Красная, 64').waitFor()
   await page.getByRole('button', { name: /Повторить оплату/ }).click()
-  await page.getByRole('heading', { name: /Демо-заказ подтверждён/i }).waitFor()
-})
+  await page.getByRole('heading', { name: 'Заказ подтверждён' }).waitFor()
+  await page.getByText('Сырники классические × 1').waitFor()
+  await page.getByText('390 ₽', { exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Посмотреть историю' }).click()
+  await page.getByText('Доставка · ул. Красная, 64').waitFor()
+  await page.getByText('Сырники классические × 1').waitFor()
+  await assertBottomNav(page, 'заказы')
 
-await scenario('repeat and empty orders', async (page) => {
-  await page.goto(new URL('#/orders', base).toString(), { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: 'Текущие', exact: true }).click()
-  await page.getByText('Текущих заказов нет').waitFor()
-  await page.getByRole('button', { name: 'История', exact: true }).click()
-  await page.getByRole('button', { name: /Проверить и повторить/ }).click()
-  await page.getByRole('heading', { name: /Проверили цену/ }).waitFor()
-  await page.getByRole('button', { name: /Добавить доступное/ }).click()
-  await page.getByText('Сезонная позиция', { exact: true }).waitFor({ state: 'detached' })
-  await page.getByRole('button', { name: /Выбрать время/ }).waitFor()
-})
+  const afterOrder = await page.evaluate(() => JSON.parse(sessionStorage.getItem('pm-demo-state') || '{}'))
+  if (afterOrder.cart?.length !== 0 || afterOrder.orders?.[0]?.amount !== 390) throw new Error('заказ не сохранён или корзина не очищена')
 
-await scenario('cake order flow', async (page) => {
+  await page.goto(new URL('#/mode', base).toString(), { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /Самовывоз/ }).click()
+  const pickupSearch = page.getByRole('textbox', { name: 'Поиск кулинарии' })
+  await pickupSearch.fill('Кубанская')
+  if (await page.locator('.location-list button').count() !== 1) throw new Error('поиск кулинарии не фильтрует список')
+  await page.getByRole('button', { name: /ул. Кубанская набережная, 35/ }).click()
+  await page.getByText('Самовывоз · ул. Кубанская набережная, 35').waitFor()
+  await page.getByRole('button', { name: 'Главная', exact: true }).click()
+  await page.getByText('Самовывоз · ул. Кубанская набережная, 35').waitFor()
+
+  await page.goto(new URL('#/repeat', base).toString(), { waitUntil: 'networkidle' })
+  await page.getByText('Сырники классические · 1 шт.').waitFor()
+  await page.getByText('Пирог с орехами · 2 шт.').waitFor()
+  await page.getByText('3 шт. · 770 ₽').waitFor()
+  await page.getByRole('button', { name: /Собрать корзину · 770 ₽/ }).click()
+  await page.locator('.cart-line').filter({ hasText: 'Пирог с орехами' }).getByText('2', { exact: true }).waitFor()
+  const repeated = await page.evaluate(() => JSON.parse(sessionStorage.getItem('pm-demo-state') || '{}').cart)
+  if (repeated?.find((line) => line.id === 'bakery')?.quantity !== 2) throw new Error('количества повтора не совпадают с корзиной')
+
+  await page.goto(new URL('#/loyalty', base).toString(), { waitUntil: 'networkidle' })
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByText('Покажите его сотруднику до оплаты.').waitFor()
+  await page.getByText('Начислить или списать баллы').waitFor()
+  await assertBottomNav(page, 'карта')
+
   await page.goto(new URL('#/cake', base).toString(), { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: 'На 12–16 гостей' }).click()
   await page.getByRole('button', { name: /Продолжить/ }).click()
   await page.getByRole('button', { name: 'Ягодный акцент' }).click()
   await page.getByRole('button', { name: /Продолжить/ }).click()
   await page.getByText('На 12–16 гостей').waitFor()
-  await page.getByText('Ягодный акцент').waitFor()
-  await page.getByRole('button', { name: /Подтвердить демо/ }).click()
-  await page.getByRole('heading', { name: /Торт сохранён/ }).waitFor()
-})
+  await page.getByText('Ягодный акцент', { exact: true }).last().waitFor()
+  const cakeReview = await page.locator('.cake-body').textContent()
+  if (/18 августа|12:00|2 400 ₽/.test(cakeReview || '')) throw new Error('в заявке появились невыбранные дата, время или цена')
+  await page.getByRole('button', { name: /Сохранить заявку/ }).click()
+  await page.getByText('Заявка хранится отдельно').waitFor()
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByText('На 12–16 гостей').waitFor()
+  const afterCake = await page.evaluate(() => JSON.parse(sessionStorage.getItem('pm-demo-state') || '{}'))
+  if (afterCake.cart?.some((line) => line.id === 'cake')) throw new Error('заявка на торт попала в обычную корзину')
+  if (afterCake.cakeRequest?.design !== 'Ягодный акцент') throw new Error('итог заявки не сохранил выбранное оформление')
+}
 
-await scenario('sms login and loyalty', async (page) => {
-  await page.goto(new URL('#/login', base).toString(), { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: /Получить демо-код/ }).click()
-  await page.getByRole('textbox', { name: /Код из СМС/ }).fill('2424')
-  await page.getByRole('button', { name: /Войти и открыть карту/ }).click()
-  await page.getByText('Карта доступна без сети').waitFor()
-})
+for (const width of [360, 390, 430]) {
+  await scenario('полный мобильный путь', width, runMobileJourney)
+}
 
-await scenario('case links and deep links', async (page) => {
+await scenario('case links and device frames', 390, async (page) => {
   const allLinks = []
   for (let slide = 1; slide <= 12; slide += 1) {
     await page.goto(new URL(`case/#slide-${slide}`, base).toString(), { waitUntil: 'networkidle' })
     allLinks.push(...await page.locator('a[href]').evaluateAll((items) => items.map((item) => item.getAttribute('href')).filter(Boolean)))
   }
+  if (await page.locator('.phone-shot > span').count()) throw new Error('декоративный вырез перекрывает мокап')
   const expected = ['#/mode', '#/payment-error', '#/loyalty', '#/cake', 'mailto:hello@eh.works', 'https://eh.works', 'https://t.me/andrey_ergohaven', 'https://max.ru/id5041212966_biz']
   for (const value of expected) {
     if (!allLinks.some((href) => href.includes(value))) problems.push(`case links: missing ${value}`)
   }
-
   for (const href of new Set(allLinks.filter((item) => item.startsWith('../?seed=case#')))) {
     const response = await page.goto(new URL(`case/${href}`, base).toString(), { waitUntil: 'networkidle' })
     if (response && !response.ok()) problems.push(`deep link ${href} HTTP ${response.status()}`)
     await page.reload({ waitUntil: 'networkidle' })
     const route = href.split('#')[1]
     if (new URL(page.url()).hash !== `#${route}`) problems.push(`deep link ${href} lost route after reload`)
+    if (!await page.locator('#root').textContent()) problems.push(`deep link ${href} empty root`)
   }
 })
 
 await browser.close()
+if (preview) preview.kill('SIGTERM')
 
 if (problems.length) {
   console.error(problems.join('\n'))
   process.exit(1)
 }
-console.log('QA passed: all prototype routes at 360/390/430 and desktop; all 12 case slides at 390/768/1440; four full scenarios; deep links; images; console; overflow')
+console.log('QA passed: 16 routes at 360/390/430; full delivery, pickup, product, order, repeat, loyalty and cake flows at every width; fixed nav; no top cutout; case at 390/768/1440; deep links; console; overflow')

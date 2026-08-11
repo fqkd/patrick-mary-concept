@@ -8,6 +8,22 @@ export type CartLine = {
   available?: boolean
 }
 
+export type ConfirmedOrder = {
+  id: string
+  mode: ServiceMode
+  location: string
+  slot: string
+  lines: CartLine[]
+  amount: number
+  status: 'Принят'
+}
+
+export type CakeRequest = {
+  size: string
+  design: string
+  status: 'Сохранена'
+}
+
 export const total = (lines: CartLine[]) =>
   lines.reduce((sum, line) => sum + line.price * line.quantity, 0)
 
@@ -30,3 +46,32 @@ export const reconcileRepeat = (lines: CartLine[], currentPrices: Record<string,
     price: currentPrices[line.id] ?? line.price,
     available: currentPrices[line.id] !== undefined,
   }))
+
+export const createConfirmedOrder = (
+  id: string,
+  mode: ServiceMode,
+  location: string,
+  slot: string,
+  lines: CartLine[],
+): ConfirmedOrder => ({
+  id,
+  mode,
+  location,
+  slot,
+  lines: structuredClone(lines),
+  amount: total(lines),
+  status: 'Принят',
+})
+
+export const createCakeRequest = (size: string, design: string): CakeRequest => ({
+  size,
+  design,
+  status: 'Сохранена',
+})
+
+export const filterLocations = (locations: string[], query: string) => {
+  const normalized = query.trim().toLocaleLowerCase('ru-RU')
+  return normalized
+    ? locations.filter((location) => location.toLocaleLowerCase('ru-RU').includes(normalized))
+    : locations
+}

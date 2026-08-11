@@ -67,7 +67,7 @@ function LinkButton({ href, children, secondary = false }: { href: string; child
 
 function Phone({ src, alt, tone = '' }: { src: string; alt: string; tone?: string }) {
   const resolved = src.startsWith('assets/') ? `../${src}` : src
-  return <figure className={`phone-shot ${tone}`}><span /><img src={resolved} alt={alt} /></figure>
+  return <figure className={`phone-shot ${tone}`}><img src={resolved} alt={alt} /></figure>
 }
 
 function Cover() {
@@ -111,13 +111,13 @@ function LoyaltyScenario() {
 
 function CakeScenario() {
   return (
-    <section className="scenario-layout"><div className="slide-copy"><SectionLabel number="07">Ключевой сценарий № 3</SectionLabel><h2>Торт — отдельный<br />законченный путь</h2><p>Не промо-карточка: пользователь выбирает размер, настроение оформления, точку и дату, затем проверяет детали перед безопасным демо-подтверждением.</p><div className="cake-steps"><span>1<small>Гости</small></span><span>2<small>Оформление</small></span><span>3<small>Получение</small></span></div><LinkButton href={proto('/cake')}>Собрать демо-торт</LinkButton></div><div className="cake-showcase"><Phone src="assets/case/cake.jpg" alt="Сценарий заказа торта" /><div className="cake-card"><CakeSlice /><span>Параметры сохраняются между шагами</span></div></div></section>
+    <section className="scenario-layout"><div className="slide-copy"><SectionLabel number="07">Ключевой сценарий № 3</SectionLabel><h2>Торт — отдельная<br />заявка на расчёт</h2><p>Пользователь выбирает размер и оформление, проверяет эти параметры и сохраняет заявку. Дата, точка, состав и стоимость не подставляются автоматически — их предстоит согласовать.</p><div className="cake-steps"><span>1<small>Гости</small></span><span>2<small>Оформление</small></span><span>3<small>Проверка</small></span></div><LinkButton href={proto('/cake')}>Собрать заявку</LinkButton></div><div className="cake-showcase"><Phone src="assets/case/cake.jpg" alt="Сценарий заявки на торт" /><div className="cake-card"><CakeSlice /><span>Заявка хранится отдельно от корзины</span></div></div></section>
   )
 }
 
 function BusinessFit() {
   return (
-    <section className="standard-layout fit-slide"><div className="slide-copy"><SectionLabel number="08">Связь с бизнесом</SectionLabel><h2>Один интерфейс<br />для разных частот</h2><p>Регулярная готовая еда и редкий торт не конкурируют на одном экране — у каждого сценария свой темп.</p></div><div className="fit-grid"><article className="daily"><span>Каждый день</span><h3>Быстрая готовая еда</h3><p>Место → доступность → корзина → время.</p><div className="mini-path"><PackageCheck /><ArrowRight /><Store /><ArrowRight /><Clock3 /></div></article><article className="habit"><span>Регулярно</span><h3>Карта и повтор</h3><p>Карта доступна сразу; прошлый заказ проверяется перед добавлением.</p><div className="mini-path"><WalletCards /><ArrowRight /><RefreshCw /></div></article><article className="event"><span>К событию</span><h3>Заказ торта</h3><p>Размер, оформление, дата и точка в отдельной последовательности.</p><div className="mini-path"><CakeSlice /><ArrowRight /><Check /></div></article></div></section>
+    <section className="standard-layout fit-slide"><div className="slide-copy"><SectionLabel number="08">Связь с бизнесом</SectionLabel><h2>Один интерфейс<br />для разных частот</h2><p>Регулярная готовая еда и редкий торт не конкурируют на одном экране — у каждого сценария свой темп.</p></div><div className="fit-grid"><article className="daily"><span>Каждый день</span><h3>Быстрая готовая еда</h3><p>Место → доступность → корзина → время.</p><div className="mini-path"><PackageCheck /><ArrowRight /><Store /><ArrowRight /><Clock3 /></div></article><article className="habit"><span>Регулярно</span><h3>Карта и повтор</h3><p>Карта доступна сразу; прошлый заказ проверяется перед добавлением.</p><div className="mini-path"><WalletCards /><ArrowRight /><RefreshCw /></div></article><article className="event"><span>К событию</span><h3>Заявка на торт</h3><p>Размер и оформление сохраняются отдельно; остальные параметры согласуются.</p><div className="mini-path"><CakeSlice /><ArrowRight /><Check /></div></article></div></section>
   )
 }
 
