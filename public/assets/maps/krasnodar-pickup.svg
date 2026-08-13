@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-labelledby="title desc">
+  <title id="title">Карта центра Краснодара</title>
+  <desc id="desc">Схема улиц и реки Кубань на основе данных OpenStreetMap</desc>
+  <rect width="720" height="420" fill="#F5F0EA"/>
+  <path d="M-30 370 C90 315 155 390 270 350 S470 285 760 345 L760 460 L-30 460Z" fill="#C7DDE2"/>
+  <path d="M75 0L240 420M180 -15L350 420M305 -20L470 420M445 -15L600 420M600 -10L700 270" stroke="#fff" stroke-width="12" opacity=".95"/>
+  <path d="M-20 60L735 260M-30 140L710 335M5 235L590 402M10 305L530 430" stroke="#fff" stroke-width="10" opacity=".94"/>
+  <path d="M250 -10L390 420M-20 166L740 370" stroke="#D6C7BC" stroke-width="20" opacity=".88"/>
+  <path d="M250 -10L390 420M-20 166L740 370" stroke="#F7F3EF" stroke-width="11"/>
+  <path d="M535 0L640 285M-15 92L720 292" stroke="#E9E1D9" stroke-width="16"/>
+  <path d="M40 25h95v76H40zM522 62h115v80H522zM420 214h93v66H420z" fill="#DDE7D6" opacity=".94"/>
+  <g fill="#665750" font-family="Arial, sans-serif" font-size="15" opacity=".88">
+    <text x="278" y="92" transform="rotate(72 278 92)">ул. Красная</text>
+    <text x="435" y="203" transform="rotate(15 435 203)">ул. 40 лет Победы</text>
+    <text x="72" y="330" transform="rotate(-8 72 330)">Кубанская набережная</text>
+    <text x="555" y="48">Чистяковская роща</text>
+    <text x="305" y="395" fill="#52737a">река Кубань</text>
+  </g>
+</svg>

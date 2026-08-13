@@ -18,9 +18,22 @@ export type ConfirmedOrder = {
   status: 'Принят'
 }
 
-export type CakeRequest = {
-  size: string
+export type CakeDraft = {
+  occasion: string
+  guests: string
   design: string
+  date: string
+  phone: string
+  comment: string
+}
+
+export type CakeRequest = {
+  occasion: string
+  guests: string
+  design: string
+  date: string
+  phone: string
+  comment: string
   status: 'Сохранена'
 }
 
@@ -63,11 +76,19 @@ export const createConfirmedOrder = (
   status: 'Принят',
 })
 
-export const createCakeRequest = (size: string, design: string): CakeRequest => ({
-  size,
-  design,
+export const createCakeRequest = (draft: CakeDraft): CakeRequest => ({
+  ...draft,
   status: 'Сохранена',
 })
+
+export const positionWord = (count: number) => {
+  const mod100 = Math.abs(count) % 100
+  const mod10 = mod100 % 10
+  if (mod100 >= 11 && mod100 <= 14) return 'позиций'
+  if (mod10 === 1) return 'позиция'
+  if (mod10 >= 2 && mod10 <= 4) return 'позиции'
+  return 'позиций'
+}
 
 export const toggleFavoriteId = (ids: string[], id: string) =>
   ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]

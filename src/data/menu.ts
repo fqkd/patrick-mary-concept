@@ -27,7 +27,7 @@ export const officialCategories = [
   'Торты в нарезке',
   'Пирожные',
   'Конфеты',
-  'Цветы,печенье, зефир',
+  'Цветы, печенье и зефир',
   'Свечки и открытки',
 ] as const
 
@@ -385,7 +385,7 @@ export const products: Product[] = [
   {
     id: 'marshmallow-bouquet',
     name: 'Букет из зефира Пионы с орхидеями',
-    category: 'Цветы,печенье, зефир',
+    category: 'Цветы, печенье и зефир',
     price: 1650,
     weight: '350 г',
     description: 'Воздушный зефир, оформленный в букет из пионов и орхидей.',
@@ -395,7 +395,7 @@ export const products: Product[] = [
   {
     id: 'pretzel-cookie',
     name: 'Печенье Крендель',
-    category: 'Цветы,печенье, зефир',
+    category: 'Цветы, печенье и зефир',
     price: 390,
     weight: '165 г',
     description: 'Хрустящее печенье в форме крендельков с сахарной обсыпкой.',

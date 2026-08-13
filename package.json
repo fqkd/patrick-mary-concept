@@ -10,7 +10,7 @@
     "test": "node --test --experimental-strip-types src/lib/*.test.ts",
     "preview": "vite preview",
     "check": "npm run lint && npm run test && npm run build",
-    "qa": "node scripts/qa.mjs",
+    "qa": "npm run build && node scripts/qa.mjs",
     "capture": "node scripts/capture.mjs"
   },
   "dependencies": {

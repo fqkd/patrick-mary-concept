@@ -7,12 +7,12 @@ await mkdir(output, { recursive: true })
 
 const states = {
   home: '?seed=case#/',
-  catalog: '?seed=case#/catalog',
+  catalog: '?seed=case#/catalog?category=cakes',
   cart: '?seed=case#/cart',
   'payment-error': '?seed=case#/payment-error',
-  login: '?seed=case#/login',
+  login: '?seed=case#/login?step=code',
   loyalty: '?seed=case#/loyalty',
-  cake: '?seed=case#/cake',
+  cake: '?seed=case#/cake?step=style',
 }
 
 const browser = await chromium.launch({ headless: true })

@@ -6,6 +6,7 @@ import {
   createCakeRequest,
   createConfirmedOrder,
   filterLocations,
+  positionWord,
   reconcileRepeat,
   toggleFavoriteId,
   total,
@@ -62,12 +63,32 @@ test('repeat preview and resulting cart preserve the same quantities', () => {
   assert.equal(total(available), 2414)
 })
 
-test('cake request contains only choices made by the user', () => {
-  assert.deepEqual(createCakeRequest('На 12–16 гостей', 'Ягодный акцент'), {
-    size: 'На 12–16 гостей',
+test('cake request keeps the complete brief entered by the user', () => {
+  assert.deepEqual(createCakeRequest({
+    occasion: 'День рождения',
+    guests: '12–16 гостей',
     design: 'Ягодный акцент',
+    date: '2026-08-22',
+    phone: '+7 900 000 00 24',
+    comment: 'Без надписи',
+  }), {
+    occasion: 'День рождения',
+    guests: '12–16 гостей',
+    design: 'Ягодный акцент',
+    date: '2026-08-22',
+    phone: '+7 900 000 00 24',
+    comment: 'Без надписи',
     status: 'Сохранена',
   })
+})
+
+test('position declension handles Russian exceptions', () => {
+  assert.equal(positionWord(1), 'позиция')
+  assert.equal(positionWord(2), 'позиции')
+  assert.equal(positionWord(4), 'позиции')
+  assert.equal(positionWord(5), 'позиций')
+  assert.equal(positionWord(11), 'позиций')
+  assert.equal(positionWord(21), 'позиция')
 })
 
 test('favorite toggle adds and removes a product without duplicates', () => {
