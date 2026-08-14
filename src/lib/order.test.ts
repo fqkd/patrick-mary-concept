@@ -63,18 +63,18 @@ test('repeat preview and resulting cart preserve the same quantities', () => {
   assert.equal(total(available), 2414)
 })
 
-test('cake request keeps the complete brief entered by the user', () => {
+test('cake request keeps every field entered by the user', () => {
   assert.deepEqual(createCakeRequest({
     occasion: 'День рождения',
     guests: '12–16 гостей',
-    design: 'Ягодный акцент',
+    design: 'Оформление с ягодами',
     date: '2026-08-22',
     phone: '+7 900 000 00 24',
     comment: 'Без надписи',
   }), {
     occasion: 'День рождения',
     guests: '12–16 гостей',
-    design: 'Ягодный акцент',
+    design: 'Оформление с ягодами',
     date: '2026-08-22',
     phone: '+7 900 000 00 24',
     comment: 'Без надписи',
