@@ -73,8 +73,8 @@ function Phone({ src, alt, tone = '' }: { src: string; alt: string; tone?: strin
 function Cover() {
   return (
     <section className="cover-layout">
-      <div className="cover-copy"><SectionLabel number="01">Инициативная концепция</SectionLabel><h1>Готовая еда,<br />бонусы и торт —<br /><em>в одном приложении</em></h1><p>Рабочий прототип приложения «Патрик & Мари». Пользователь выбирает доставку или самовывоз, собирает заказ, открывает карту лояльности и оставляет заявку на торт.</p><div className="button-row"><LinkButton href={proto('/')}>Открыть прототип</LinkButton><LinkButton href="#slide-5" secondary>Посмотреть сценарии</LinkButton></div><small className="disclaimer">Инициативная концепция ООО «ЭРГОХАВЭН» на основе открытых данных. Не является официальным продуктом компании.</small></div>
-      <div className="cover-visual"><div className="orange-orbit" /><Phone src="assets/case/home.jpg" alt="Главный экран с выбором доставки и самовывоза" /><div className="float-chip card-chip"><WalletCards /> Бонусы после входа</div><div className="float-chip pickup-chip"><Store /> Кулинария до меню</div></div>
+      <div className="cover-copy"><SectionLabel number="01">Инициативная концепция</SectionLabel><h1>Каким может быть<br />новое приложение<br /><em>«Патрик & Мари»</em></h1><p>Мы собрали рабочий прототип с доставкой, бонусной картой, повтором заказа и отдельной заявкой на торт</p><div className="button-row"><LinkButton href={proto('/')}>Открыть прототип</LinkButton><LinkButton href="#slide-5" secondary>Посмотреть сценарии</LinkButton></div><small className="disclaimer">Инициативная концепция ООО «ЭРГОХАВЭН» на основе открытых данных. Не является официальным продуктом компании.</small></div>
+      <div className="cover-visual"><div className="orange-orbit" /><Phone src="assets/case/home.jpg" alt="Главный экран с выбором доставки и самовывоза" /><div className="float-chip card-chip"><WalletCards /> Бонусная карта всегда под рукой</div><div className="float-chip pickup-chip"><Store /> Меню выбранной кулинарии</div></div>
     </section>
   )
 }
