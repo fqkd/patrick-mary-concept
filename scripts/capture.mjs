@@ -9,10 +9,12 @@ const states = {
   home: '?seed=case#/',
   catalog: '?seed=case#/catalog?category=cakes',
   cart: '?seed=case#/cart',
+  checkout: '?seed=case#/checkout',
   'payment-error': '?seed=case#/payment-error',
   login: '?seed=case#/login?step=code',
   loyalty: '?seed=case#/loyalty',
   cake: '?seed=case#/cake?step=style',
+  'cake-confirm': '?seed=case#/cake-confirm',
 }
 
 const browser = await chromium.launch({ headless: true })
@@ -20,6 +22,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, devi
 for (const [name, route] of Object.entries(states)) {
   await page.goto(new URL(route, base).toString(), { waitUntil: 'networkidle' })
   await page.reload({ waitUntil: 'networkidle' })
+  if (name === 'login') await page.getByRole('textbox', { name: 'Код из СМС' }).fill('1234')
   await page.waitForFunction(() => [...document.images]
     .filter((image) => {
       const box = image.getBoundingClientRect()

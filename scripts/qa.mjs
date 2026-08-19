@@ -286,7 +286,7 @@ async function fullJourney(page) {
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByText('Без надписи').waitFor()
   await page.getByRole('button', { name: /Сохранить заявку/ }).click()
-  await page.getByRole('heading', { name: 'Заявка сохранена' }).waitFor()
+  await page.getByRole('heading', { name: 'Заявка отправлена' }).waitFor()
 }
 
 for (const width of [360, 390, 430]) await scenario('полный мобильный путь', width, fullJourney)
