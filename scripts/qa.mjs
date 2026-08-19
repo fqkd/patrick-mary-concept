@@ -146,11 +146,11 @@ async function assertBottomNav(page, label) {
 await scenario('гостевой старт и защита данных', 390, async (page) => {
   await fresh(page)
   if (await page.getByText('1 240', { exact: true }).count()) throw new Error('баланс виден гостю')
-  if (await page.locator('.demo-qr').count()) throw new Error('QR-код виден гостю')
+  if (await page.locator('.loyalty-qr').count()) throw new Error('QR-код виден гостю')
   if (await page.getByText('+7 900 000 00 24', { exact: true }).count()) throw new Error('телефон виден гостю')
   await page.goto(routeUrl('/loyalty'), { waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: 'Войдите, чтобы открыть карту' }).waitFor()
-  if (await page.locator('.demo-qr').count()) throw new Error('QR-код доступен по прямой ссылке гостю')
+  if (await page.locator('.loyalty-qr').count()) throw new Error('QR-код доступен по прямой ссылке гостю')
   await page.goto(routeUrl('/orders?tab=history'), { waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: 'Войдите, чтобы посмотреть заказы' }).waitFor()
   if (await page.getByText('28 июля', { exact: true }).count()) throw new Error('история видна гостю')
@@ -210,7 +210,7 @@ async function fullJourney(page) {
   await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.getByRole('heading', { name: 'Андрей' }).waitFor()
   await page.goto(routeUrl('/loyalty'), { waitUntil: 'networkidle' })
-  await page.locator('.demo-qr').waitFor()
+  await page.locator('.loyalty-qr').waitFor()
   if (await page.getByRole('link', { name: /Правила программы/ }).getAttribute('href') !== 'https://patrickmary.ru/bonusy') throw new Error('правила лояльности не ведут на официальный источник')
   await assertBottomNav(page, 'бонусы')
 
