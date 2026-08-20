@@ -139,9 +139,9 @@ function Metrics() {
 }
 
 function Scope() {
-  const stages = ['Аналитика', 'UX/UI-дизайн', 'Разработка и интеграции', 'Публикация и обновления', 'Техническая поддержка']
+  const stages = ['Исследование и аналитика', 'UX/UI-дизайн', 'Разработка и интеграции', 'Публикация и обновления', 'Техническая поддержка']
   return (
-    <section className="scope-layout"><div className="slide-copy"><SectionLabel number="11">Что мы берём на себя</SectionLabel><h2>Разработаем приложение и будем его поддерживать</h2><p>EH — аккредитованная ИТ-компания из Краснодара. Можем начать с пилота, а затем разработать приложение и взять на себя его обновления и поддержку.</p></div><div className="scope-process"><div className="eh-mark" aria-label="EH">EH</div>{stages.map((stage, index) => <div className="scope-stage" key={stage}><span>{index + 1}</span><strong>{stage}</strong>{index < stages.length - 1 && <ArrowRight />}</div>)}</div><div className="scope-note">Чтобы оценить сроки и стоимость, сначала уточним требования и изучим текущие системы.</div></section>
+    <section className="scope-layout"><div className="slide-copy"><SectionLabel number="11">Что мы берём на себя</SectionLabel><h2>Разработаем приложение и будем его поддерживать</h2><p>Мы — аккредитованная ИТ-компания из Краснодара. Можем начать с пилотной версии, а затем развивать приложение, выпускать обновления и обеспечивать техническую поддержку.</p><p className="scope-note">Сроки и стоимость определим после уточнения требований и знакомства с текущими системами.</p></div><div className="scope-process"><div className="eh-mark" aria-label="Эргохавэн">Эргохавэн</div>{stages.map((stage, index) => <div className="scope-stage" key={stage}><span>{index + 1}</span><strong>{stage}</strong></div>)}</div></section>
   )
 }
 
