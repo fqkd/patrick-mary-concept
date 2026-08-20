@@ -16,11 +16,13 @@
   "dependencies": {
     "@fontsource/manrope": "^5.2.6",
     "@fontsource/prata": "^5.2.6",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.20",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.3",
     "@types/react-dom": "^19.0.2",

@@ -46,7 +46,10 @@ import {
   type ServiceMode,
 } from './lib/order'
 import { hashPath, readHashRoute, routeRedirect, safeNextRoute, serviceModeFromParams } from './lib/navigation'
+import { filterPickupLocations, sortPickupLocationsFromCenter } from './lib/locations'
 import { officialCategories, products, type Product } from './data/menu'
+import { pickupLocations } from './data/locations'
+import { PickupMap } from './components/PickupMap'
 
 type PendingSwitch = {
   mode: ServiceMode
@@ -120,11 +123,6 @@ const cakeStyles = [
   { name: 'Оформление с надписью', image: products.find((item) => item.id === 'school-sweet-lesson')?.image ?? 'assets/food/cakes.jpg' },
 ]
 
-const pickupLocations = [
-  { address: 'ул. Красная, 155', hours: 'Сегодня до 22:00', x: 42, y: 25 },
-  { address: 'ул. Кубанская набережная, 35', hours: 'Режим работы уточняется', x: 14, y: 82 },
-  { address: 'ул. 40-летия Победы, 117', hours: 'Сегодня до 22:00', x: 84, y: 14 },
-]
 const deliveryLocations = ['ул. Красная, 64', 'ул. Зиповская, 8', 'ул. Ставропольская, 129']
 
 const navigate = (path: string) => { window.location.hash = path }
@@ -360,10 +358,6 @@ function ModeScreen({ onChoose }: { onChoose: (mode: ServiceMode) => void }) {
   return <div className="screen paper-screen"><Header title="Способ получения" /><div className="screen-body"><span className="eyebrow">Получение заказа</span><h1>Доставка или<br />самовывоз?</h1><p className="lead">После выбора укажите адрес доставки или кулинарию. Покажем доступные товары и время.</p><button className="mode-card delivery" onClick={() => onChoose('delivery')}><span className="mode-icon"><PackageCheck /></span><span><strong>Доставка</strong><small>Указать адрес доставки</small></span><ChevronRight /></button><button className="mode-card pickup" onClick={() => onChoose('pickup')}><span className="mode-icon"><Store /></span><span><strong>Самовывоз</strong><small>Выбрать кулинарию</small></span><ChevronRight /></button></div></div>
 }
 
-function PickupMap({ active, onActive }: { active: number; onActive: (index: number) => void }) {
-  return <div className="pickup-map" aria-label="Карта ближайших кулинарий"><img src="assets/maps/krasnodar-pickup.svg" alt="Карта центра Краснодара с тремя кулинариями" />{pickupLocations.map((location, index) => <button key={location.address} className={`map-marker${active === index ? ' selected' : ''}`} style={{ left: `${location.x}%`, top: `${location.y}%` }} aria-label={`Точка ${index + 1}: ${location.address}`} onClick={() => onActive(index)}>{index + 1}</button>)}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a></div>
-}
-
 function DeliveryPinMap({ address }: { address: string }) {
   return <div className="delivery-map" aria-label={`Выбран адрес ${address}`}><i className="road r1" /><i className="road r2" /><i className="road r3" /><MapPin /><strong>{address}</strong></div>
 }
@@ -371,12 +365,22 @@ function DeliveryPinMap({ address }: { address: string }) {
 function LocationScreen({ mode, authenticated, selected, onChoose }: { mode: ServiceMode; authenticated: boolean; selected: string; onChoose: (location: string) => void }) {
   const [query, setQuery] = useState('')
   const [activeLocation, setActiveLocation] = useState(selected)
+  const [showAllPickup, setShowAllPickup] = useState(false)
   const pickup = mode === 'pickup'
-  const activePickup = Math.max(0, pickupLocations.findIndex((item) => item.address === activeLocation))
+  const activePickup = pickupLocations.findIndex((item) => item.address === activeLocation)
+  const pickupSorted = useMemo(() => sortPickupLocationsFromCenter(pickupLocations), [])
+  const pickupFiltered = useMemo(() => filterPickupLocations(pickupSorted, query), [pickupSorted, query])
+  const pickupShown = query ? pickupFiltered : showAllPickup ? pickupSorted : pickupSorted.slice(0, 5)
   const deliveryShown = filterLocations(deliveryLocations, query)
+  const selectPickupMarker = (index: number) => {
+    const location = pickupLocations[index]
+    if (!location) return
+    setActiveLocation(location.address)
+    if (!pickupShown.some((item) => item.id === location.id)) setShowAllPickup(true)
+  }
   return (
     <div className="screen paper-screen location-screen"><Header title={pickup ? 'Выберите кулинарию' : 'Куда доставить?'} back="/mode" /><div className="screen-body"><label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={pickup ? 'Адрес или район' : 'Введите адрес доставки'} aria-label={pickup ? 'Поиск кулинарии' : 'Поиск адреса доставки'} /></label>
-      {pickup ? <><PickupMap active={activePickup} onActive={(index) => setActiveLocation(pickupLocations[index].address)} /><div className="location-heading"><strong>Ближайшие кулинарии</strong><a href="https://patrickmary.ru/shops" target="_blank" rel="noreferrer">Показать все <ExternalLink /></a></div><div className="location-list">{pickupLocations.filter((item) => filterLocations([item.address], query).length).map((location) => { const index = pickupLocations.indexOf(location); const active = activeLocation === location.address; return <button key={location.address} className={active ? 'active' : ''} onClick={() => setActiveLocation(location.address)}><span className="location-index">{index + 1}</span><span><strong>{location.address}</strong><small>{location.hours}</small></span>{active ? <Check /> : <ChevronRight />}</button> })}</div></> : <>{activeLocation && <DeliveryPinMap address={activeLocation} />}<div className="location-heading"><strong>{authenticated ? 'Сохранённые адреса' : query ? 'Подходящие адреса' : 'Укажите улицу и дом'}</strong></div>{authenticated || query ? <div className="location-list">{deliveryShown.map((location, index) => { const active = activeLocation === location; return <button key={location} className={active ? 'active' : ''} onClick={() => setActiveLocation(location)}><span className="location-index"><MapPin /></span><span><strong>{location}</strong><small>{authenticated ? index === 0 ? 'Дом' : 'Адрес доставки' : 'Найденный адрес'}</small></span>{active ? <Check /> : <ChevronRight />}</button> })}{query && deliveryShown.length === 0 && <button onClick={() => setActiveLocation(query)}><span className="location-index"><MapPin /></span><span><strong>{query}</strong><small>Доставить по этому адресу</small></span><ChevronRight /></button>}</div> : <div className="address-prompt"><MapPin /><strong>Введите адрес доставки</strong><span>Укажите улицу и дом, затем выберите адрес из списка.</span></div>}</>}
+      {pickup ? <><PickupMap active={activePickup} onActive={selectPickupMarker} /><div className="location-heading"><span><strong>{query ? `Найдено: ${pickupFiltered.length}` : 'Кулинарии'}</strong>{!query && <small>Сначала — ближе к центру Краснодара</small>}</span>{!query && <button type="button" aria-expanded={showAllPickup} onClick={() => setShowAllPickup((value) => !value)}>{showAllPickup ? 'Свернуть' : `Показать все · ${pickupLocations.length}`}</button>}</div>{pickupShown.length ? <div className="location-list">{pickupShown.map((location) => { const index = pickupLocations.findIndex((item) => item.id === location.id); const active = activeLocation === location.address; return <button key={location.id} className={active ? 'active' : ''} onClick={() => setActiveLocation(location.address)}><span className="location-index">{index + 1}</span><span><strong>{location.address}</strong><small>{location.district} · {location.hours}</small></span>{active ? <Check /> : <ChevronRight />}</button> })}</div> : <div className="empty-inline"><Search /><span><strong>Ничего не найдено</strong><small>Попробуйте улицу, адрес или округ.</small></span></div>}</> : <>{activeLocation && <DeliveryPinMap address={activeLocation} />}<div className="location-heading"><strong>{authenticated ? 'Сохранённые адреса' : query ? 'Подходящие адреса' : 'Укажите улицу и дом'}</strong></div>{authenticated || query ? <div className="location-list">{deliveryShown.map((location, index) => { const active = activeLocation === location; return <button key={location} className={active ? 'active' : ''} onClick={() => setActiveLocation(location)}><span className="location-index"><MapPin /></span><span><strong>{location}</strong><small>{authenticated ? index === 0 ? 'Дом' : 'Адрес доставки' : 'Найденный адрес'}</small></span>{active ? <Check /> : <ChevronRight />}</button> })}{query && deliveryShown.length === 0 && <button onClick={() => setActiveLocation(query)}><span className="location-index"><MapPin /></span><span><strong>{query}</strong><small>Доставить по этому адресу</small></span><ChevronRight /></button>}</div> : <div className="address-prompt"><MapPin /><strong>Введите адрес доставки</strong><span>Укажите улицу и дом, затем выберите адрес из списка.</span></div>}</>}
       </div><div className="bottom-cta"><button className="primary" disabled={!activeLocation} onClick={() => onChoose(activeLocation)}>{pickup ? 'Выбрать эту кулинарию' : 'Доставить по этому адресу'} <ArrowRight /></button></div></div>
   )
 }

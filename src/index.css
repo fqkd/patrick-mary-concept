@@ -270,13 +270,21 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 .search-field, .real-search { min-height: 52px; }
 .search-field input, .real-search input { font-size: 14px; }
 .location-screen .screen-body { padding-bottom: 12px; }
-.pickup-map { position: relative; height: 212px; margin-top: 14px; overflow: hidden; border: 1px solid #e2d9d2; border-radius: 22px; background: #f5f0ea; }
-.pickup-map > img { width: 100%; height: 100%; object-fit: cover; }
-.pickup-map > a { position: absolute; z-index: 5; right: 7px; bottom: 6px; min-height: 0; padding: 4px 6px; border-radius: 5px; color: #4e4642; background: rgba(255,255,255,.9); font-size: 10px; line-height: 1; text-decoration: none; }
-.map-marker { position: absolute; z-index: 4; width: 36px; min-height: 36px !important; height: 36px; transform: translate(-50%,-50%); border: 3px solid #fff; border-radius: 50%; color: #fff; background: #8b6557; box-shadow: 0 5px 14px rgba(63,42,34,.28); font-size: 13px; font-weight: 900; cursor: pointer; }
-.map-marker.selected { width: 48px; height: 48px; min-height: 48px !important; border-width: 4px; background: #ef6a32; box-shadow: 0 7px 18px rgba(191,69,30,.35); }
+.pickup-map { position: relative; z-index: 0; height: 236px; margin-top: 14px; overflow: hidden; border: 1px solid #e2d9d2; border-radius: 22px; background: #e9e5df; font-family: 'Manrope', sans-serif; }
+.pickup-map .leaflet-tile { filter: saturate(.75) sepia(.08) contrast(.94); }
+.pickup-map .leaflet-control-zoom { overflow: hidden; border: 0; border-radius: 12px; box-shadow: 0 5px 16px rgba(54,37,30,.17); }
+.pickup-map .leaflet-control-zoom a { width: 36px; height: 36px; min-height: 36px; border: 0; color: var(--brown); background: rgba(255,255,255,.94); font: 700 18px/36px 'Manrope', sans-serif; }
+.pickup-map .leaflet-control-attribution { padding: 3px 6px; color: #655850; background: rgba(255,255,255,.88); font-size: 9px; }
+.pickup-map .leaflet-control-attribution a { color: #655850; }
+.pm-map-pin { border: 3px solid #fff; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #8b6557; box-shadow: 0 5px 14px rgba(63,42,34,.3); font: 900 12px/1 'Manrope', sans-serif; transition: width .18s, height .18s, margin .18s, background .18s; }
+.pm-map-pin span { display: grid; width: 100%; height: 100%; place-items: center; }
+.pm-map-pin.selected { border-width: 4px; background: #ef6a32; box-shadow: 0 7px 18px rgba(191,69,30,.42); }
+.pickup-map .leaflet-tooltip { border: 0; border-radius: 9px; padding: 6px 9px; color: var(--ink); box-shadow: 0 6px 18px rgba(54,37,30,.15); font: 700 11px/1.25 'Manrope', sans-serif; }
 .location-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 2px 4px; }
+.location-heading > span { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .location-heading strong { font-size: 15px; }
+.location-heading small { color: var(--muted); font-size: 11px; }
+.location-heading > button { flex: 0 0 auto; min-height: 44px; border: 0; padding: 0; color: var(--orange-dark); background: transparent; font-size: 12px; font-weight: 800; cursor: pointer; }
 .location-heading a { min-height: 44px; display: inline-flex; gap: 5px; align-items: center; color: var(--orange-dark); font-size: 12px; font-weight: 800; text-decoration: none; }
 .location-heading svg { width: 14px; }
 .location-list { margin-top: 4px; }
@@ -415,7 +423,7 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 
 @media (max-width: 370px) {
   .screen-body, .cake-body { padding-left: 16px; padding-right: 16px; }
-  .pickup-map { height: 202px; }
+  .pickup-map { height: 220px; }
   .style-grid { gap: 6px; }
   .style-grid span { padding: 0 6px; font-size: 11px; }
   .product-photo { height: 146px; }
