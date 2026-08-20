@@ -16,10 +16,15 @@ const states = {
   cake: '?seed=case#/cake?step=style',
   'cake-confirm': '?seed=case#/cake-confirm',
 }
+const selectedStates = process.env.ONLY
+  ? Object.fromEntries(Object.entries(states).filter(([name]) => name === process.env.ONLY))
+  : states
+
+if (Object.keys(selectedStates).length === 0) throw new Error(`Unknown capture state: ${process.env.ONLY}`)
 
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
-for (const [name, route] of Object.entries(states)) {
+for (const [name, route] of Object.entries(selectedStates)) {
   await page.goto(new URL(route, base).toString(), { waitUntil: 'networkidle' })
   await page.reload({ waitUntil: 'networkidle' })
   if (name === 'login') await page.getByRole('textbox', { name: 'Код из СМС' }).fill('1234')
@@ -33,4 +38,4 @@ for (const [name, route] of Object.entries(states)) {
   await page.screenshot({ path: new URL(`${name}.jpg`, output).pathname, type: 'jpeg', quality: 88 })
 }
 await browser.close()
-console.log(`Captured ${Object.keys(states).length} prototype states`)
+console.log(`Captured ${Object.keys(selectedStates).length} prototype states`)
