@@ -30,8 +30,9 @@ export function PickupMap({ active, onActive }: { active: number; onActive: (ind
       maxZoom: 18,
       zoomControl: true,
     })
+    map.attributionControl.setPrefix(false)
     L.tileLayer(tileUrl, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
       maxZoom: 18,
     }).addTo(map)
     const markers = pickupLocations.map((location, index) => {
